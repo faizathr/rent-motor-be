@@ -54,12 +54,6 @@ app.post('/user/login', async (req, res) => {
   }
 });
 
-app.get('/register', (req, res) => {
-  userQuery.getUsers().then((users) => {
-    res.json(users);
-  });
-});
-
 app.post('/register', async (req, res) => {
   // Async untuk concurrency, request dan responds
   try {
