@@ -39,21 +39,6 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Route to login user
-app.post('/user/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const payload = { email, password };
-    const token = await login(payload); // Untuk nunggu sebentar saat lagi memproses
-    res.status(200).json({ message: 'Success login!', token }); // Responds dan status yang dikirim, status bisa variatif tergantung message
-  } catch (err) {
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: err.message,
-    });
-  }
-});
-
 app.post('/register', async (req, res) => {
   // Async untuk concurrency, request dan responds
   try {
@@ -118,6 +103,21 @@ async function register(payload) {
   }
 }
 
+// Route to login user
+app.post('/user/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const payload = { email, password };
+    const token = await login(payload); // Untuk nunggu sebentar saat lagi memproses
+    res.status(200).json({ message: 'Success login!', token }); // Responds dan status yang dikirim, status bisa variatif tergantung message
+  } catch (err) {
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: err.message,
+    });
+  }
+});
+
 async function login(payload) {
   try {
     const checkUser = await userQuery.findOneByEmail(payload.email);
@@ -147,3 +147,4 @@ async function login(payload) {
     throw error;
   }
 }
+
