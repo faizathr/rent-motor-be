@@ -16,8 +16,6 @@ const PORT = 8080;
 // Import the bcrypt module for password hashing
 const bcrypt = require('bcrypt');
 
-const key = process.env.JWT_SECRET || 'default_secret_key';
-
 // Import the jwt module for authentication and authorization checks
 const jwt = require('jsonwebtoken');
 // Import the verifyToken middleware to authenticate JWT tokens
@@ -49,19 +47,11 @@ app.post('/register', async (req, res) => {
     const user = await register(payload);
 
     userQuery.createUser(user).then((user) => {
-      res.status(201).json({
-        status: 'success',
-        message: 'Register success',
-        data: {}
-      }); // Respond with the created user and status code 201
+      res.status(201).json({ message: 'Register success' }); // Respond with the created user and status code 201
     });
-  } catch (err) {
-    console.log(err);
-    res.status(400).json({
-      status: 'error',
-      message: 'Register error: ' + err.message,
-      data: {}
-    });
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ message: 'Register ' + error });
   }
 });
 
@@ -114,24 +104,16 @@ async function register(payload) {
 }
 
 // Route to login user
-app.post('/login', async (req, res) => {
+app.post('/user/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const payload = { email, password };
     const token = await login(payload); // Untuk nunggu sebentar saat lagi memproses
-    res.status(200).json({
-      status: 'success',
-      message: 'Login success',
-      data: {
-        user: email,
-        token: token
-      }
-    }); // Responds dan status yang dikirim, status bisa variatif tergantung message
+    res.status(200).json({ message: 'Success login!', token }); // Responds dan status yang dikirim, status bisa variatif tergantung message
   } catch (err) {
-    res.status(400).json({
-      status: 'error',
-      message: 'Login error: ' + err.message,
-      data: {}
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: err.message,
     });
   }
 });
@@ -157,6 +139,7 @@ async function login(payload) {
       throw new Error('Invalid email or password');
     }
 
+    const key = process.env.JWT_SECRET || 'default_secret_key'; // Bikin secret key
     const token = jwt.sign(user, key, { expiresIn: '30m' }); // jwt.sign untuk ngasilin token
     return token; // Generate token
   } catch (error) {
@@ -165,36 +148,35 @@ async function login(payload) {
   }
 }
 
-app.get('/orders', async (req, res) => {
+app.get('/history', async (req, res) => {
   try {
-    if (!req.headers.authorization) {
-      res.status(403).json({
-        status: 'error',
-        message: 'Unauthorized',
-        data: {}
-      });
-    } else {
-      jwt.verify(req.headers.authorization, key, function(err, decoded) {
-        if (err) {
-          res.status(403).json({
-            status: 'error',
-            message: 'Unauthorized',
-            data: {}
-          });
-        } else {
-          res.status(200).json({
-            status: 'success',
-            message: 'GET Orders success',
-            data: {}
-          });
-        }
+    const userId = req.user.id; 
+
+    const completedPayment = await userQuery.getCompletedPayment(userId);
+
+    if (!completedPayment || completedPayment.paymentHistory.length === 0) {
+      return res.status(404).json({
+        message: "No payment history found for this user",
       });
     }
-  } catch (err) {
-    res.status(400).json({
-      status: 'error',
-      message: 'Login error: ' + err.message,
-      data: {}
+
+    const allPayment = completedPayment.paymentHistory
+      .filter((payment) => payment.status === 'completed')
+      .map((payment) => ({
+        amount: payment.amount,
+        date: payment.date,
+        details: payment.details,
+      }));
+
+    res.status(200).json({
+      message: "success",
+      payments: allPayment,
+    });
+  } catch (error) {
+    console.error("Error fetching payment history:", error);
+    res.status(500).json({
+      message: "Error fetching payment history",
+      error: error.message,
     });
   }
 });

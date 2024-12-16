@@ -3,6 +3,7 @@ const schema = require("./schema");
 const bcrypt = require("bcrypt");
 
 const Users = mongoose.model("User", schema.userSchema);
+const Complete = mongoose.model("Complete", schema.completeSchema)
 
 async function getUsers() {
     return Users.find();
@@ -30,6 +31,11 @@ async function findOneByEmail(email) {
     return Users.findOne({ email: email });
 }
 
+const getCompletedPayment = async (userId) => {
+    return await Complete.findById(userId)
+      .select('paymentHistory')
+  };
+
 module.exports = {
     getUsers,
     createUser,
@@ -38,4 +44,5 @@ module.exports = {
     findByName,
     findOneByEmail,
     findOneByEmail,
+    getCompletedPayment,
 };
