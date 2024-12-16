@@ -70,8 +70,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-
-
 async function register(payload) {
   try {
     // const test = await userQuery.getUsers()
@@ -93,10 +91,15 @@ async function register(payload) {
       throw new Error('Email not valid');
     }
 
-    if (checkEmail.length != 0 && checkEmail) {
-      console.log(checkEmail);
+    // if (checkEmail.length != 0 && checkEmail) {
+    //   console.log(checkEmail);
+    //   throw new Error('You already have an account, please log in!');
+    // }
+
+    if (checkEmail && checkEmail.length > 0) {
       throw new Error('You already have an account, please log in!');
     }
+    
 
     // if (checkUser && checkUser.length !=0) {
     //   throw new Error("Username unavailable, please choose other username");
@@ -118,20 +121,24 @@ async function register(payload) {
 async function login(payload) {
   try {
     const checkUser = await userQuery.findOneByEmail(payload.email);
-    if (!checkUser) {
+    if (!checkUser || !checkUser.password) {
       throw new Error('Invalid email or password');
     }
+
     const user = {
       email: checkUser.email,
       password: checkUser.password,
     };
+
     const isValidPassword = bcrypt.compareSync(
       payload.password,
-      checkUser[0].password
+      checkUser.password
     ); // Check pass dengan db udah sama atau ga
+
     if (!isValidPassword) {
       throw new Error('Invalid email or password');
     }
+
     const key = process.env.JWT_SECRET || 'default_secret_key'; // Bikin secret key
     const token = jwt.sign(user, key, { expiresIn: '30m' }); // jwt.sign untuk ngasilin token
     return token; // Generate token

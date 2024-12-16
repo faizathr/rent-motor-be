@@ -27,7 +27,7 @@ async function findByName(name) {
 }
 
 async function findOneByEmail(email) {
-    return Users.findOne({ email });
+    return Users.findOne({ email: email });
 }
 
 module.exports = {
