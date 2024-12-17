@@ -29,7 +29,7 @@ async function findByName(name) {
 }
 
 async function findOneByEmail(email) {
-    return Users.find({ email: email });
+    return Users.findOne({ email: email });
 }
 
 async function createOrder(email, orderStatus) {
