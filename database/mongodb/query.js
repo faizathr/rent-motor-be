@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 
 const Users = mongoose.model("User", schema.userSchema);
 const Order = mongoose.model("Order", schema.orderSchema);
+const Inventory = mongoose.model("Inventory", schema.inventorySchema);
 
 async function getUsers() {
     return Users.find();
@@ -128,6 +129,18 @@ async function getOrderById(id) {
   return Order.findById(id); 
 }
 
+async function getAllInventories() {
+  return Inventory.find();  
+}
+
+async function createInventory(inventory) {
+  return Inventory.create(inventory);
+}
+
+async function updateInventory(id, inventory) {
+  return Inventory.findByIdAndUpdate(id, inventory, { new: true });
+}
+
 module.exports = {
     getUsers,
     createUser,
@@ -144,4 +157,7 @@ module.exports = {
     getAllOrders,
     getOrderById,
     findOrderByEmail,
+    getAllInventories,
+    createInventory,
+    updateInventory
 };

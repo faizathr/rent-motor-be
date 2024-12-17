@@ -160,11 +160,86 @@ async function login(payload) {
     const key = process.env.JWT_SECRET || 'default_secret_key'; // Bikin secret key
     const token = jwt.sign(user, key, { expiresIn: '30m' }); // jwt.sign untuk ngasilin token
     return token; // Generate token
-  } catch (error) {
-    console.error('Error login: ', error);
-    throw error;
+  } catch (err) {
+    console.error('Error login: ', err);
+    throw err;
   }
 }
+
+app.get('/inventories', async (req, res) => {
+  try {
+    const inventories = await userQuery.getAllInventories();
+
+    if (!inventories || inventories.length === 0) {
+      return res.status(404).json({
+        status: 'success',
+        message: 'No inventories found',
+        data: {
+          inventories: []
+        }
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'GET inventories success',
+      data: {
+        inventories: inventories
+      }
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'error',
+      message: 'Error GET Inventory: ' + err.message,
+      data: {}
+    })
+  }
+});
+
+app.post('/inventories', verifyToken, async (req, res) => {
+  try {
+    const inventory = req.body;
+
+    const savedInventory = await userQuery.createInventory(inventory);
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Inventory created successfully.',
+      data: {
+        inventories: savedInventory
+      }
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'error',
+      message: 'Error POST Inventory: ' + err.message,
+      data: {}
+    })
+  }
+});
+
+app.put('/inventories/:id', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const inventories = req.body;
+
+    const savedInventory = await userQuery.updateInventory(id, inventories);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Inventory updated successfully.',
+      data: {
+        inventories: savedInventory
+      }
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'error',
+      message: 'Error PUT Inventory: ' + err.message,
+      data: {}
+    })
+  }
+});
 
 app.get('/orders', verifyToken, async (req, res) => {
   try {
