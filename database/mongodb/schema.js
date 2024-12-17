@@ -19,6 +19,8 @@ const orderSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     orderStatus: [
       {
+        phoneNumber: { type: String, required: true },
+        idCard: { type: String, required: true },
         orderDate: { type: Date, required: true},
         paymentDate: { type: Date, required: false},
         paymentStatus: { type: String, enum: ['completed', 'uncomplete'], default: 'uncomplete'},

@@ -37,19 +37,6 @@ async function createOrder(email, orderStatus) {
   return newOrder.save();
 }
 
-async function updateReturnStatus(id) {
-  return Order.findByIdAndUpdate(
-    id,
-    {
-      $set: {
-        'orderStatus.0.returnStatus': 'returned',
-        'orderStatus.0.returnDate': new Date(),
-      },
-    },
-    { new: true }
-  );
-}
-
 async function findOrderByEmail(email) {
   return Order.findOne({ email });
 }
@@ -65,7 +52,6 @@ async function updatePaymentStatusByOrderStatusId(orderStatusId) {
     {
       $set: {
         'orderStatus.$.paymentStatus': 'completed',
-        'orderStatus.$.paymentDate': new Date(),
       },
     },
     { new: true }
@@ -78,7 +64,6 @@ async function updateTakenStatusByOrderStatusId(orderStatusId) {
     {
       $set: {
         'orderStatus.$.takenStatus': 'taken',
-        'orderStatus.$.takenDate': new Date(),
       },
     },
     { new: true }
@@ -91,7 +76,6 @@ async function updateReturnStatusByOrderStatusId(orderStatusId) {
     {
       $set: {
         'orderStatus.$.returnStatus': 'returned',
-        'orderStatus.$.returnDate': new Date(),
       },
     },
     { new: true }

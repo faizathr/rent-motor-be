@@ -286,6 +286,8 @@ app.post('/orders', verifyToken, async (req, res) => {
     // Validasi setiap entri dalam orderStatus
     const isValidOrderStatus = orderStatus.every((status) => {
       return (
+        status.phoneNumber &&
+        status.idCard &&
         status.orderDate &&
         status.takenDate &&
         status.returnDate &&
