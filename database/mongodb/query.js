@@ -52,6 +52,7 @@ async function updatePaymentStatusByOrderStatusId(orderStatusId) {
     {
       $set: {
         'orderStatus.$.paymentStatus': 'completed',
+        'orderStatus.$.paymentDate': new Date(),
       },
     },
     { new: true }
