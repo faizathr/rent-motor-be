@@ -166,7 +166,7 @@ async function login(payload) {
   }
 }
 
-app.get('/orders', verifyToken, (req, res) => {
+app.get('/orders', verifyToken, async (req, res) => {
   try {
     const orders = await userQuery.getAllOrders();
 
@@ -196,7 +196,7 @@ app.get('/orders', verifyToken, (req, res) => {
   }
 });
 
-app.post('/orders', verifyToken, (req, res) => {
+app.post('/orders', verifyToken, async (req, res) => {
   try {
     const { email, orderStatus } = req.body;
 
@@ -266,7 +266,7 @@ app.post('/orders', verifyToken, (req, res) => {
   }
 });
 
-app.put('/orders/:id/paidstatus', verifyToken, (req, res) => {
+app.put('/orders/:id/paidstatus', verifyToken, async (req, res) => {
   try {
     const { id } = req.params; // _id nya orderStatus
     const updatedOrder = await userQuery.updatePaymentStatusByOrderStatusId(id);
@@ -296,7 +296,7 @@ app.put('/orders/:id/paidstatus', verifyToken, (req, res) => {
   }
 });
 
-app.put('/orders/:id/takenstatus', verifyToken, (req, res) => {
+app.put('/orders/:id/takenstatus', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const updatedOrder = await userQuery.updateTakenStatusByOrderStatusId(id);
@@ -324,7 +324,7 @@ app.put('/orders/:id/takenstatus', verifyToken, (req, res) => {
   }
 });
 
-app.put('/orders/:id/returnedstatus', verifyToken, (req, res) => {
+app.put('/orders/:id/returnedstatus', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const updatedOrder = await userQuery.updateReturnStatusByOrderStatusId(id);
