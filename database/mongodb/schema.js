@@ -8,6 +8,12 @@ const userSchema = new mongoose.Schema({
   isAdmin: Boolean,
 });
 
+const inventorySchema = new mongoose.Schema({
+  name: String,
+  total: Number,
+  available: Number
+});
+
 const orderSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true },
@@ -27,5 +33,6 @@ const orderSchema = new mongoose.Schema(
 
 module.exports = {
   userSchema,
+  inventorySchema,
   orderSchema,
 };

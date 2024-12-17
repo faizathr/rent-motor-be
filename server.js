@@ -21,7 +21,7 @@ const bcrypt = require('bcrypt');
 // Import the jwt module for authentication and authorization checks
 const jwt = require('jsonwebtoken');
 // Import the verifyToken middleware to authenticate JWT tokens
-//const verifyToken = require('./middlewares/jwt');
+const verifyToken = require('./middlewares/jwt');
 // Import the passport middleware to authenticate and configure the passport authentication
 // const { initializePassport, authenticatePassportJwt } = require('./middlewares/passport-jwt');
 // Initialize Passport
@@ -49,11 +49,19 @@ app.post('/register', async (req, res) => {
     const user = await register(payload);
 
     userQuery.createUser(user).then((user) => {
-      res.status(201).json({ message: 'Register success' }); // Respond with the created user and status code 201
+      res.status(201).json({
+        status: 'success',
+        message: 'Register success',
+        data: {}
+      }); // Respond with the created user and status code 201
     });
-  } catch (error) {
-    console.log(error);
-    res.status(404).json({ message: 'Register ' + error });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: 'error',
+      message: 'Register error: ' + err.message,
+      data: {}
+    });
   }
 });
 
@@ -106,16 +114,24 @@ async function register(payload) {
 }
 
 // Route to login user
-app.post('/user/login', async (req, res) => {
+app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const payload = { email, password };
     const token = await login(payload); // Untuk nunggu sebentar saat lagi memproses
-    res.status(200).json({ message: 'Success login!', token }); // Responds dan status yang dikirim, status bisa variatif tergantung message
+    res.status(200).json({
+      status: 'success',
+      message: 'Login success',
+      data: {
+        user: email,
+        token: token
+      }
+    }); // Responds dan status yang dikirim, status bisa variatif tergantung message
   } catch (err) {
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: err.message,
+    res.status(400).json({
+      status: 'error',
+      message: 'Login error: ' + err.message,
+      data: {}
     });
   }
 });
@@ -150,13 +166,45 @@ async function login(payload) {
   }
 }
 
-app.post('/orders', async (req, res) => {
+app.get('/orders', verifyToken, (req, res) => {
+  try {
+    const orders = await userQuery.getAllOrders();
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({
+        status: 'success',
+        message: 'No orders found',
+        data: {
+          orders: []
+        }
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'GET Orders success',
+      data: {
+        orders: orders
+      }
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'error',
+      message: 'Login error: ' + err.message,
+      data: {}
+    })
+  }
+});
+
+app.post('/orders', verifyToken, (req, res) => {
   try {
     const { email, orderStatus } = req.body;
 
     if (!email || !orderStatus || !Array.isArray(orderStatus)) {
       return res.status(400).json({
-        message: 'Invalid input: "email" and "orderStatus" are required, and "orderStatus" must be an array.'
+        status: 'error',
+        message: 'Invalid input: "email" and "orderStatus" are required, and "orderStatus" must be an array.',
+        data: {}
       });
     }
 
@@ -174,7 +222,9 @@ app.post('/orders', async (req, res) => {
 
     if (!isValidOrderStatus) {
       return res.status(400).json({
-        message: 'Invalid orderStatus: Each entry must have valid dates and statuses.'
+        status: 'error',
+        message: 'Invalid orderStatus: Each entry must have valid dates and statuses.',
+        data: {}
       });
     }
 
@@ -187,8 +237,11 @@ app.post('/orders', async (req, res) => {
       const updatedOrder = await existingOrder.save();
 
       return res.status(200).json({
+        status: 'success',
         message: 'Order status added successfully.',
-        order: updatedOrder,
+        data: {
+          order: updatedOrder
+        }
       });
     }
 
@@ -196,116 +249,107 @@ app.post('/orders', async (req, res) => {
     const savedOrder = await userQuery.createOrder(email, orderStatus);
 
     res.status(201).json({
+      status: 'success',
       message: 'Order created successfully.',
-      order: savedOrder,
+      data: {
+        order: savedOrder
+      }
     });
-  } catch (error) {
-    console.error('Error creating order:', error);
+  } catch (err) {
+    console.error('Error creating order:', err);
 
-    res.status(500).json({
-      message: 'Internal Server Error',
-      error: error.message,
+    res.status(400).json({
+      status: 'error',
+      message: 'Internal Server Error: ' + err.message,
+      data: {}
     });
   }
 });
 
-app.put('/orders/:id/paidstatus', async (req, res) => {
+app.put('/orders/:id/paidstatus', verifyToken, (req, res) => {
   try {
     const { id } = req.params; // _id nya orderStatus
     const updatedOrder = await userQuery.updatePaymentStatusByOrderStatusId(id);
 
     if (!updatedOrder) {
-      return res.status(404).json({ message: 'Order status not found' });
+      return res.status(200).json({
+        status: 'success',
+        message: 'Order status not found',
+        data: {}
+      });
     }
 
     res.status(200).json({
+      status: 'success',
       message: 'Payment status updated to completed',
-      order: updatedOrder,
+      data: {
+        order: updatedOrder
+      }
     });
-  } catch (error) {
-    console.error('Error updating payment status:', error);
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  } catch (err) {
+    console.error('Error updating payment status:', err);
+    res.status(400).json({
+      status: 'error',
+      message: 'Internal Server Error: ' + err.message,
+      data: {}
+    });
   }
 });
 
-app.put('/orders/:id/takenstatus', async (req, res) => {
+app.put('/orders/:id/takenstatus', verifyToken, (req, res) => {
   try {
     const { id } = req.params;
     const updatedOrder = await userQuery.updateTakenStatusByOrderStatusId(id);
 
     if (!updatedOrder) {
-      return res.status(404).json({ message: 'Order status not found' });
+      return res.status(200).json({
+        status: 'success',
+        message: 'Order status not found',
+        data: {}
+      });
     }
 
     res.status(200).json({
+      status: 'success',
       message: 'Taken status updated to taken',
       order: updatedOrder,
     });
-  } catch (error) {
-    console.error('Error updating taken status:', error);
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  } catch (err) {
+    console.error('Error updating taken status:', err);
+    res.status(400).json({
+      status: 'error',
+      message: 'Internal Server Error' + err.message,
+      data: {}
+    });
   }
 });
 
-app.put('/orders/:id/returnedstatus', async (req, res) => {
+app.put('/orders/:id/returnedstatus', verifyToken, (req, res) => {
   try {
     const { id } = req.params;
     const updatedOrder = await userQuery.updateReturnStatusByOrderStatusId(id);
 
     if (!updatedOrder) {
-      return res.status(404).json({ message: 'Order status not found' });
+      return res.status(404).json({ 
+        status: 'success',
+        message: 'Order status not found',
+        data: {}
+      });
     }
 
     res.status(200).json({
-      message: 'Return status updated to returned',
-      order: updatedOrder,
+      status: 'success',
+      message: 'Return status updated to returnedupdatedOrder',
+      data: {
+        order: updatedOrder
+      }
     });
-  } catch (error) {
-    console.error('Error updating return status:', error);
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
-  }
-});
-
-app.get('/orders', async (req, res) => {
-  try {
-    const orders = await userQuery.getAllOrders();
-
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: 'No orders found.' });
-    }
-
-    res.status(200).json({
-      message: 'Orders fetched successfully.',
-      orders,
-    });
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    res.status(500).json({
-      message: 'Internal Server Error',
-      error: error.message,
-    });
-  }
-});
-
-app.get('/orders/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const order = await userQuery.getOrderById(id);
-
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found.' });
-    }
-
-    res.status(200).json({
-      message: 'Order fetched successfully.',
-      order,
-    });
-  } catch (error) {
-    console.error('Error fetching order by ID:', error);
-    res.status(500).json({
-      message: 'Internal Server Error',
-      error: error.message,
+  } catch (err) {
+    console.error('Error updating return status:', err);
+    res.status(400).json({ 
+      status: 'success',
+      message: 'Internal Server Error' + err.message,
+      data: {}
     });
   }
 });
