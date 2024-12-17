@@ -10,6 +10,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 // Initialize an Express application
 const app = express();
+const router = express.Router(); // Initialize the router
+
 app.use(cors());
 // Define the port number on which the server will listen
 const PORT = 8080;
@@ -148,34 +150,161 @@ async function login(payload) {
   }
 }
 
-app.get('/history', async (req, res) => {
+app.post('/orders', async (req, res) => {
   try {
-    const userId = req.user.id; 
+    const { email, orderStatus } = req.body;
 
-    const completedPayment = await userQuery.getCompletedPayment(userId);
-
-    if (!completedPayment || completedPayment.paymentHistory.length === 0) {
-      return res.status(404).json({
-        message: "No payment history found for this user",
+    if (!email || !orderStatus || !Array.isArray(orderStatus)) {
+      return res.status(400).json({
+        message: 'Invalid input: "email" and "orderStatus" are required, and "orderStatus" must be an array.'
       });
     }
 
-    const allPayment = completedPayment.paymentHistory
-      .filter((payment) => payment.status === 'completed')
-      .map((payment) => ({
-        amount: payment.amount,
-        date: payment.date,
-        details: payment.details,
-      }));
+    // Validasi setiap entri dalam orderStatus
+    const isValidOrderStatus = orderStatus.every((status) => {
+      return (
+        status.orderDate &&
+        status.takenDate &&
+        status.returnDate &&
+        ['completed', 'uncomplete'].includes(status.paymentStatus) &&
+        ['taken', 'untaken'].includes(status.takenStatus) &&
+        ['returned', 'unreturned'].includes(status.returnStatus)
+      );
+    });
 
-    res.status(200).json({
-      message: "success",
-      payments: allPayment,
+    if (!isValidOrderStatus) {
+      return res.status(400).json({
+        message: 'Invalid orderStatus: Each entry must have valid dates and statuses.'
+      });
+    }
+
+    // Periksa apakah email sudah ada di database
+    const existingOrder = await userQuery.findOrderByEmail(email);
+
+    if (existingOrder) {
+      // Jika email sudah ada, tambahkan orderStatus baru ke array
+      existingOrder.orderStatus.push(...orderStatus);
+      const updatedOrder = await existingOrder.save();
+
+      return res.status(200).json({
+        message: 'Order status added successfully.',
+        order: updatedOrder,
+      });
+    }
+
+    // Jika email belum ada, buat order baru
+    const savedOrder = await userQuery.createOrder(email, orderStatus);
+
+    res.status(201).json({
+      message: 'Order created successfully.',
+      order: savedOrder,
     });
   } catch (error) {
-    console.error("Error fetching payment history:", error);
+    console.error('Error creating order:', error);
+
     res.status(500).json({
-      message: "Error fetching payment history",
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+});
+
+app.put('/orders/:id/paidstatus', async (req, res) => {
+  try {
+    const { id } = req.params; // _id nya orderStatus
+    const updatedOrder = await userQuery.updatePaymentStatusByOrderStatusId(id);
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order status not found' });
+    }
+
+    res.status(200).json({
+      message: 'Payment status updated to completed',
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+app.put('/orders/:id/takenstatus', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedOrder = await userQuery.updateTakenStatusByOrderStatusId(id);
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order status not found' });
+    }
+
+    res.status(200).json({
+      message: 'Taken status updated to taken',
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error('Error updating taken status:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+app.put('/orders/:id/returnedstatus', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedOrder = await userQuery.updateReturnStatusByOrderStatusId(id);
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order status not found' });
+    }
+
+    res.status(200).json({
+      message: 'Return status updated to returned',
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error('Error updating return status:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await userQuery.getAllOrders();
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found.' });
+    }
+
+    res.status(200).json({
+      message: 'Orders fetched successfully.',
+      orders,
+    });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+});
+
+app.get('/orders/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const order = await userQuery.getOrderById(id);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Order fetched successfully.',
+      order,
+    });
+  } catch (error) {
+    console.error('Error fetching order by ID:', error);
+    res.status(500).json({
+      message: 'Internal Server Error',
       error: error.message,
     });
   }
