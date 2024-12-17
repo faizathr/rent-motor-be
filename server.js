@@ -91,7 +91,7 @@ async function register(payload) {
     //   throw new Error('You already have an account, please log in!');
     // }
 
-    if (checkEmail && checkEmail.length > 0) {
+    if (checkEmail != null) {
       throw new Error('You already have an account, please log in!');
     }
     
