@@ -5,6 +5,8 @@ const cors = require('cors');
 mongodb.connectDB();
 
 const r2 = require('./storage/s3');
+const multer  = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
 // Import the express module to create and configure the HTTP server
 const express = require('express');
@@ -15,7 +17,6 @@ const app = express();
 const router = express.Router(); // Initialize the router
 
 app.use(cors());
-app.use(fileUpload());
 // Define the port number on which the server will listen
 const PORT = 8080;
 // Import the bcrypt module for password hashing
@@ -25,7 +26,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 // Import the verifyToken middleware to authenticate JWT tokens
 const verifyToken = require('./middlewares/jwt');
-const fileUpload = require('express-fileupload');
 // Import the passport middleware to authenticate and configure the passport authentication
 // const { initializePassport, authenticatePassportJwt } = require('./middlewares/passport-jwt');
 // Initialize Passport
@@ -60,7 +60,7 @@ app.post('/register', async (req, res) => {
       }); // Respond with the created user and status code 201
     });
   } catch (err) {
-    console.log(err);
+    console.error('Error POST Register:', err);
     res.status(400).json({
       status: 'error',
       message: 'Register error: ' + err.message,
@@ -133,6 +133,7 @@ app.post('/login', async (req, res) => {
       }
     }); // Responds dan status yang dikirim, status bisa variatif tergantung message
   } catch (err) {
+    console.error('Error POST Login:', err);
     res.status(400).json({
       status: 'error',
       message: 'Login error: ' + err.message,
@@ -158,9 +159,10 @@ app.get('/login/verify', verifyToken, async (req, res) => {
       }
     }); // Responds dan status yang dikirim, status bisa variatif tergantung message
   } catch (err) {
+    console.error('Error POST Verify Login:', err);
     res.status(400).json({
       status: 'error',
-      message: 'Login error: ' + err.message,
+      message: 'Verify Login error: ' + err.message,
       data: {}
     });
   }
@@ -219,6 +221,7 @@ app.get('/inventories', async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('Error GET Inventory:', err);
     res.status(400).json({
       status: 'error',
       message: 'Error GET Inventory: ' + err.message,
@@ -227,7 +230,7 @@ app.get('/inventories', async (req, res) => {
   }
 });
 
-app.post('/inventories', verifyToken, async (req, res) => {
+app.post('/inventories', verifyToken, upload.single('file'), async (req, res) => {
   try {
     const { name, type, fuel, transmission, capacity, price, total, available } = req.body;
 
@@ -235,6 +238,7 @@ app.post('/inventories', verifyToken, async (req, res) => {
       return (
         name && name != null &&
         ['Skuter', 'Sport'].includes(type) &&
+        req.file &&
         fuel && fuel > 0 &&
         ['Matic', 'Manual'].includes(transmission) &&
         capacity && capacity > 0 &&
@@ -245,20 +249,7 @@ app.post('/inventories', verifyToken, async (req, res) => {
     })(name, type, fuel, transmission, capacity, price, total, available);
 
     if (isValidInventory) {
-      const imageFile = req.files.image;
-      const imageExtension = path.extname(imageFile.name);
-      const allowedExtension = ['.png','.jpg','.jpeg'];
-
-      if (!allowedExtension.includes(imageExtension)) {
-        return res.status(422).send({
-          status: 'error',
-          message: 'Error POST Inventory: filetype not allowed',
-          data: {}
-        });
-      }
-
-      const uploadImage = await r2.bucket.upload(file, encodeURIComponent(name + imageExtension));
-      const image = uploadImage.publicUrl;
+      const image = r2.uploadImage(req.file);
 
       const savedInventory = await userQuery.createInventory({
         name,
@@ -287,11 +278,20 @@ app.post('/inventories', verifyToken, async (req, res) => {
       })
     }
   } catch (err) {
-    res.status(400).json({
-      status: 'error',
-      message: 'Error POST Inventory: ' + err.message,
-      data: {}
-    })
+    console.error('Error POST Inventory:', err);
+    if (["MimeTypeNotAllowed","ExtensionNotAllowed"].includes(err.name)) {
+      res.status(422).json({
+        status: 'error',
+        message: 'Error POST Inventory: ' + err.message,
+        data: {}
+      })
+    } else {
+      res.status(400).json({
+        status: 'error',
+        message: 'Error POST Inventory: ' + err.message,
+        data: {}
+      });
+    }
   }
 });
 
@@ -310,6 +310,7 @@ app.put('/inventories/:id', verifyToken, async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('Error PUT Inventory:', err);
     res.status(400).json({
       status: 'error',
       message: 'Error PUT Inventory: ' + err.message,
@@ -340,6 +341,7 @@ app.get('/orders', verifyToken, async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('Error GET Order:', err);
     res.status(400).json({
       status: 'error',
       message: 'Login error: ' + err.message,
@@ -348,11 +350,11 @@ app.get('/orders', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/orders', verifyToken, async (req, res) => {
+app.post('/orders', verifyToken, upload.single('file'), async (req, res) => {
   try {
     const { email, orderStatus } = req.body;
 
-    if (!email || !orderStatus || !Array.isArray(orderStatus)) {
+    if (!email || !orderStatus || !Array.isArray(orderStatus) || !req.file) {
       return res.status(400).json({
         status: 'error',
         message: 'Invalid input: "email" and "orderStatus" are required, and "orderStatus" must be an array.',
@@ -382,27 +384,14 @@ app.post('/orders', verifyToken, async (req, res) => {
       });
     }
 
-    const imageFile = req.files.ktpImage;
-    const imageExtension = path.extname(imageFile.name);
-    const allowedExtension = ['.png','.jpg','.jpeg'];
-
-    if (!allowedExtension.includes(imageExtension)) {
-      return res.status(422).send({
-        status: 'error',
-        message: 'Error POST Order: filetype not allowed',
-        data: {}
-      });
-    }
-
-    const uploadImage = await r2.bucket.upload(file, encodeURIComponent("ktp-" + email + imageExtension));
-    const imageURL = uploadImage.publicUrl;
+    const image = r2.uploadImage(req.file);
 
     // Periksa apakah email sudah ada di database
     const existingOrder = await userQuery.findOrderByEmail(email);
 
     if (existingOrder) {
       // Jika email sudah ada, tambahkan orderStatus baru ke array
-      existingOrder.orderStatus.push({ ...customer, imageURL });
+      existingOrder.orderStatus.push({ ...orderStatus, image });
       const updatedOrder = await existingOrder.save();
 
       return res.status(200).json({
@@ -425,13 +414,20 @@ app.post('/orders', verifyToken, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Error creating order:', err);
-
-    res.status(400).json({
-      status: 'error',
-      message: 'Internal Server Error: ' + err.message,
-      data: {}
-    });
+    console.error('Error POST Order:', err);
+    if (["MimeTypeNotAllowed","ExtensionNotAllowed"].includes(err.name)) {
+      res.status(422).json({
+        status: 'error',
+        message: 'Error POST Inventory: ' + err.message,
+        data: {}
+      })
+    } else {
+      res.status(400).json({
+        status: 'error',
+        message: 'Error POST Inventory: ' + err.message,
+        data: {}
+      });
+    }
   }
 });
 
