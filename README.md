@@ -11,6 +11,23 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 ---
 
+### API Documentation Table
+
+| Method | Endpoint                        | Usage                                                                 |
+|--------|---------------------------------|-----------------------------------------------------------------------|
+| POST   | `/register`                     | Membuat account baru                                                 |
+| POST   | `/login`                        | Login dengan account yang telah didaftarkan dan mendapatkan JWT token |
+| GET    | `/inventories`                  | Mendapatkan seluruh inventory yang ada                               |
+| POST   | `/inventories`                  | Membuat inventory baru                                               |
+| PUT    | `/inventories/:id`              | Mengupdate inventory berdasarkan id                                  |
+| GET    | `/orders`                       | Mendapatkan seluruh order yang pernah dibuat oleh account tertentu   |
+| POST   | `/orders`                       | Membuat order baru                                                   |
+| PUT    | `/orders/:id/paidstatus`        | Mengubah status pembayaran dari uncomplete menjadi completed         |
+| PUT    | `/orders/:id/takenstatus`       | Mengubah status pembayaran dari untaken menjadi taken                |
+| PUT    | `/orders/:id/returnedstatus`    | Mengubah status pembayaran dari unreturned menjadi returned          |
+
+---
+
 ## Endpoints
 
 ### Authentication
