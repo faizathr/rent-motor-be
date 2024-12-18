@@ -78,7 +78,8 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
       "message": "Login success",
       "data": {
         "user": "email",
-        "token": "string"
+        "token": "string",
+        "isAdmin": "boolean"
       }
     }
     ```
@@ -102,7 +103,8 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
       "message": "Login success",
       "data": {
         "user": "email",
-        "token": "string"
+        "token": "string",
+        "isAdmin": "boolean"
       }
     }
     ```
@@ -159,7 +161,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
   {
     "name": "string",
     "type": "Skuter | Sport",
-    "image": "string (URL)",
+    "image": "Image Binary",
     "fuel": "integer",
     "transmission": "Matic | Manual",
     "capacity": "integer",
@@ -258,7 +260,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
     "orderStatus": [
       {
         "phoneNumber": "string",
-        "idCard": "string (URL)",
+        "idCard": "Image Binary",
         "orderDate": "string (ISO format)",
         "takenDate": "string (ISO format)",
         "returnDate": "string (ISO format)",
