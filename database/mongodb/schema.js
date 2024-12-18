@@ -5,11 +5,17 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
-  isAdmin: Boolean,
+  isAdmin: { type: Boolean, default: false }
 });
 
 const inventorySchema = new mongoose.Schema({
   name: String,
+  type: { type: String, enum: ['Skuter', 'Sport'], default: 'Skuter'},
+  image: String,
+  fuel: Number,
+  transmission: { type: String, enum: ['Matic', 'Manual'], default: 'Matic'},
+  capacity: Number,
+  price: Number,
   total: Number,
   available: Number
 });

@@ -4,6 +4,8 @@ const userQuery = require('./database/mongodb/query');
 const cors = require('cors');
 mongodb.connectDB();
 
+const r2 = require('./storage/s3');
+
 // Import the express module to create and configure the HTTP server
 const express = require('express');
 // Import the body-parser middleware to parse incoming request bodies
@@ -13,6 +15,7 @@ const app = express();
 const router = express.Router(); // Initialize the router
 
 app.use(cors());
+app.use(fileUpload());
 // Define the port number on which the server will listen
 const PORT = 8080;
 // Import the bcrypt module for password hashing
@@ -22,6 +25,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 // Import the verifyToken middleware to authenticate JWT tokens
 const verifyToken = require('./middlewares/jwt');
+const fileUpload = require('express-fileupload');
 // Import the passport middleware to authenticate and configure the passport authentication
 // const { initializePassport, authenticatePassportJwt } = require('./middlewares/passport-jwt');
 // Initialize Passport
@@ -118,13 +122,39 @@ app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const payload = { email, password };
-    const token = await login(payload); // Untuk nunggu sebentar saat lagi memproses
+    const {token, isAdmin} = await login(payload); // Untuk nunggu sebentar saat lagi memproses
     res.status(200).json({
       status: 'success',
       message: 'Login success',
       data: {
         user: email,
-        token: token
+        token: token,
+        isAdmin: isAdmin
+      }
+    }); // Responds dan status yang dikirim, status bisa variatif tergantung message
+  } catch (err) {
+    res.status(400).json({
+      status: 'error',
+      message: 'Login error: ' + err.message,
+      data: {}
+    });
+  }
+});
+
+app.get('/login/verify', verifyToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const email = user.email;
+    const password = user.password;
+    const payload = { email, password };
+    const { token, isAdmin } = await login(payload); // Untuk nunggu sebentar saat lagi memproses
+    res.status(200).json({
+      status: 'success',
+      message: 'Login success',
+      data: {
+        user: email,
+        token: token,
+        isAdmin: isAdmin
       }
     }); // Responds dan status yang dikirim, status bisa variatif tergantung message
   } catch (err) {
@@ -146,6 +176,7 @@ async function login(payload) {
     const user = {
       email: checkUser.email,
       password: checkUser.password,
+      isAdmin: checkUser.isAdmin
     };
 
     const isValidPassword = bcrypt.compareSync(
@@ -159,7 +190,7 @@ async function login(payload) {
 
     const key = process.env.JWT_SECRET || 'default_secret_key'; // Bikin secret key
     const token = jwt.sign(user, key, { expiresIn: '30m' }); // jwt.sign untuk ngasilin token
-    return token; // Generate token
+    return token, user.isAdmin; // Generate token
   } catch (err) {
     console.error('Error login: ', err);
     throw err;
@@ -198,17 +229,63 @@ app.get('/inventories', async (req, res) => {
 
 app.post('/inventories', verifyToken, async (req, res) => {
   try {
-    const inventory = req.body;
+    const { name, type, fuel, transmission, capacity, price, total, available } = req.body;
 
-    const savedInventory = await userQuery.createInventory(inventory);
+    const isValidInventory = ((name, type, fuel, transmission, capacity, price, total, available) => {
+      return (
+        name && name != null &&
+        ['Skuter', 'Sport'].includes(type) &&
+        fuel && fuel > 0 &&
+        ['Matic', 'Manual'].includes(transmission) &&
+        capacity && capacity > 0 &&
+        price && price > 0 &&
+        total &&
+        available
+      )
+    })(name, type, fuel, transmission, capacity, price, total, available);
 
-    res.status(201).json({
-      status: 'success',
-      message: 'Inventory created successfully.',
-      data: {
-        inventories: savedInventory
+    if (isValidInventory) {
+      const imageFile = req.files.image;
+      const imageExtension = path.extname(imageFile.name);
+      const allowedExtension = ['.png','.jpg','.jpeg'];
+
+      if (!allowedExtension.includes(imageExtension)) {
+        return res.status(422).send({
+          status: 'error',
+          message: 'Error POST Inventory: filetype not allowed',
+          data: {}
+        });
       }
-    });
+
+      const uploadImage = await r2.bucket.upload(file, encodeURIComponent(name + imageExtension));
+      const image = uploadImage.publicUrl;
+
+      const savedInventory = await userQuery.createInventory({
+        name,
+        type,
+        image,
+        fuel,
+        transmission,
+        capacity,
+        price,
+        total,
+        available
+      });
+
+      res.status(201).json({
+        status: 'success',
+        message: 'Inventory created successfully.',
+        data: {
+          inventories: savedInventory
+        }
+      });
+    } else {
+      res.status(400).json({
+        status: 'error',
+        message: 'Error POST Inventory: Invalid Inventory Data',
+        data: {}
+      })
+    }
   } catch (err) {
     res.status(400).json({
       status: 'error',
@@ -287,7 +364,7 @@ app.post('/orders', verifyToken, async (req, res) => {
     const isValidOrderStatus = orderStatus.every((status) => {
       return (
         status.phoneNumber &&
-        status.idCard &&
+        status.idCard &&  
         status.orderDate &&
         status.takenDate &&
         status.returnDate &&
@@ -300,17 +377,32 @@ app.post('/orders', verifyToken, async (req, res) => {
     if (!isValidOrderStatus) {
       return res.status(400).json({
         status: 'error',
-        message: 'Invalid orderStatus: Each entry must have valid dates and statuses.',
+        message: 'Error POST Order: Invalid Order Data',
         data: {}
       });
     }
+
+    const imageFile = req.files.ktpImage;
+    const imageExtension = path.extname(imageFile.name);
+    const allowedExtension = ['.png','.jpg','.jpeg'];
+
+    if (!allowedExtension.includes(imageExtension)) {
+      return res.status(422).send({
+        status: 'error',
+        message: 'Error POST Order: filetype not allowed',
+        data: {}
+      });
+    }
+
+    const uploadImage = await r2.bucket.upload(file, encodeURIComponent("ktp-" + email + imageExtension));
+    const imageURL = uploadImage.publicUrl;
 
     // Periksa apakah email sudah ada di database
     const existingOrder = await userQuery.findOrderByEmail(email);
 
     if (existingOrder) {
       // Jika email sudah ada, tambahkan orderStatus baru ke array
-      existingOrder.orderStatus.push(...orderStatus);
+      existingOrder.orderStatus.push({ ...customer, imageURL });
       const updatedOrder = await existingOrder.save();
 
       return res.status(200).json({

@@ -15,16 +15,17 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 | Method | Endpoint                        | Usage                                                                 |
 |--------|---------------------------------|-----------------------------------------------------------------------|
-| POST   | `/register`                     | Membuat account baru                                                 |
+| POST   | `/register`                     | Membuat account baru                                                  |
 | POST   | `/login`                        | Login dengan account yang telah didaftarkan dan mendapatkan JWT token |
-| GET    | `/inventories`                  | Mendapatkan seluruh inventory yang ada                               |
-| POST   | `/inventories`                  | Membuat inventory baru                                               |
-| PUT    | `/inventories/:id`              | Mengupdate inventory berdasarkan id                                  |
-| GET    | `/orders`                       | Mendapatkan seluruh order yang pernah dibuat oleh account tertentu   |
-| POST   | `/orders`                       | Membuat order baru                                                   |
-| PUT    | `/orders/:id/paidstatus`        | Mengubah status pembayaran dari uncomplete menjadi completed         |
-| PUT    | `/orders/:id/takenstatus`       | Mengubah status pembayaran dari untaken menjadi taken                |
-| PUT    | `/orders/:id/returnedstatus`    | Mengubah status pembayaran dari unreturned menjadi returned          |
+| POST   | `/login/verify`                 | Melakukan verifikasi JWT token dan memperbaruinya                     |
+| GET    | `/inventories`                  | Mendapatkan seluruh inventory yang ada                                |
+| POST   | `/inventories`                  | Membuat inventory baru                                                |
+| PUT    | `/inventories/:id`              | Mengupdate inventory berdasarkan id                                   |
+| GET    | `/orders`                       | Mendapatkan seluruh order yang pernah dibuat oleh account tertentu    |
+| POST   | `/orders`                       | Membuat order baru                                                    |
+| PUT    | `/orders/:id/paidstatus`        | Mengubah status pembayaran dari uncomplete menjadi completed          |
+| PUT    | `/orders/:id/takenstatus`       | Mengubah status pembayaran dari untaken menjadi taken                 |
+| PUT    | `/orders/:id/returnedstatus`    | Mengubah status pembayaran dari unreturned menjadi returned           |
 
 ---
 
@@ -90,6 +91,30 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
     }
     ```
 
+#### GET `/login/verify`
+- **Description**: Verify existing JWT token and generate the updated one.
+- **Authorization**: Bearer Token
+- **Responses**:
+  - **200 (Success)**:
+    ```json
+    {
+      "status": "success",
+      "message": "Login success",
+      "data": {
+        "user": "email",
+        "token": "string"
+      }
+    }
+    ```
+  - **400 (Error)**:
+    ```json
+    {
+      "status": "error",
+      "message": "Login error: {error message}",
+      "data": {}
+    }
+    ```
+
 ---
 
 ### Inventories
@@ -128,6 +153,21 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 #### POST `/inventories`
 - **Description**: Creates a new inventory item.
+- **Authorization**: Bearer Token
+- **Request Body**:
+  ```json
+  {
+    "name": "string",
+    "type": "Skuter | Sport",
+    "image": "string (URL)",
+    "fuel": "integer",
+    "transmission": "Matic | Manual",
+    "capacity": "integer",
+    "price": "integer",
+    "total": "integer",
+    "available": "integer"
+  }
+  ```
 - **Responses**:
   - **201 (Success)**:
     ```json
@@ -150,6 +190,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 #### PUT `/inventories/:id`
 - **Description**: Updates an inventory item by ID.
+- **Authorization**: Bearer Token
 - **Responses**:
   - **200 (Success)**:
     ```json
@@ -176,6 +217,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 #### GET `/orders`
 - **Description**: Retrieves all orders for a specific user.
+- **Authorization**: Bearer Token
 - **Responses**:
   - **200 (Success)**:
     ```json
@@ -208,6 +250,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 #### POST `/orders`
 - **Description**: Creates a new order.
+- **Authorization**: Bearer Token
 - **Request Body**:
   ```json
   {
@@ -215,7 +258,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
     "orderStatus": [
       {
         "phoneNumber": "string",
-        "idCard": "string",
+        "idCard": "string (URL)",
         "orderDate": "string (ISO format)",
         "takenDate": "string (ISO format)",
         "returnDate": "string (ISO format)",
@@ -258,6 +301,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 #### PUT `/orders/:id/paidstatus`
 - **Description**: Updates payment status of an order to `completed`.
+- **Authorization**: Bearer Token
 - **Responses**:
   - **200 (Success)**:
     ```json
@@ -288,6 +332,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 #### PUT `/orders/:id/takenstatus`
 - **Description**: Updates taken status of an order to `taken`.
+- **Authorization**: Bearer Token
 - **Responses**:
   - **200 (Success)**:
     ```json
@@ -318,6 +363,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 #### PUT `/orders/:id/returnedstatus`
 - **Description**: Updates return status of an order to `returned`.
+- **Authorization**: Bearer Token
 - **Responses**:
   - **200 (Success)**:
     ```json
