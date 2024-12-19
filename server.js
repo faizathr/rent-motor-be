@@ -253,7 +253,7 @@ app.post('/inventories', verifyToken, upload.single('image'), async (req, res) =
     })(name, type, fuel, transmission, capacity, price, total, available);
 
     if (isValidInventory) {
-      const image = r2.uploadImage(req.file);
+      const image = await uploadImage(req.file);
 
       const savedInventory = await userQuery.createInventory({
         name,
@@ -387,7 +387,7 @@ app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => 
       else if (!phone) {invalidItems.push("phone")}
       else if (!startDate) {invalidItems.push("startDate")}
       else if (!endDate) {invalidItems.push("endDate")}
-      else if (!req.file) {invalidItems.push("req.file")}
+      else if (!req.file) {invalidItems.push("ktpImage")}
       return res.status(400).json({
         status: 'error',
         message: `Error POST Order: Invalid Order Data (${invalidItems.join(", ")})`,
@@ -395,7 +395,7 @@ app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => 
       });
     }
 
-    const imageURL = uploadImage(req.file);
+    const imageURL = await uploadImage(req.file);
 
     // Periksa apakah email sudah ada di database
     const existingOrder = await userQuery.findOrderByEmail(email);
