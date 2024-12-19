@@ -4,7 +4,7 @@ const userQuery = require('./database/mongodb/query');
 const cors = require('cors');
 mongodb.connectDB();
 
-const r2 = require('./storage/s3');
+const uploadImage = require('./storage/s3');
 const multer  = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
@@ -122,7 +122,7 @@ app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const payload = { email, password };
-    const {token, isAdmin} = await login(payload); // Untuk nunggu sebentar saat lagi memproses
+    const {token, isAdmin} = await login(payload, false); // Untuk nunggu sebentar saat lagi memproses
     res.status(200).json({
       status: 'success',
       message: 'Login success',
@@ -148,7 +148,7 @@ app.get('/login/verify', verifyToken, async (req, res) => {
     const email = user.email;
     const password = user.password;
     const payload = { email, password };
-    const { token, isAdmin } = await login(payload); // Untuk nunggu sebentar saat lagi memproses
+    const { token, isAdmin } = await login(payload, true); // Untuk nunggu sebentar saat lagi memproses
     res.status(200).json({
       status: 'success',
       message: 'Login success',
@@ -168,7 +168,7 @@ app.get('/login/verify', verifyToken, async (req, res) => {
   }
 });
 
-async function login(payload) {
+async function login(payload, ishashed) {
   try {
     const checkUser = await userQuery.findOneByEmail(payload.email);
     if (!checkUser || !checkUser.password) {
@@ -181,10 +181,10 @@ async function login(payload) {
       isAdmin: checkUser.isAdmin
     };
 
-    const isValidPassword = bcrypt.compareSync(
+    const isValidPassword = ishashed ? (payload.password === checkUser.password) : bcrypt.compareSync(
       payload.password,
       checkUser.password
-    ); // Check pass dengan db udah sama atau ga
+    );
 
     if (!isValidPassword) {
       throw new Error('Invalid email or password');
@@ -192,7 +192,10 @@ async function login(payload) {
 
     const key = process.env.JWT_SECRET || 'default_secret_key'; // Bikin secret key
     const token = jwt.sign(user, key, { expiresIn: '30m' }); // jwt.sign untuk ngasilin token
-    return token, user.isAdmin; // Generate token
+    return {
+      token: token,
+      isAdmin: user.isAdmin
+    }; // Generate token
   } catch (err) {
     console.error('Error login: ', err);
     throw err;
@@ -230,7 +233,7 @@ app.get('/inventories', async (req, res) => {
   }
 });
 
-app.post('/inventories', verifyToken, upload.single('file'), async (req, res) => {
+app.post('/inventories', verifyToken, upload.single('image'), async (req, res) => {
   try {
     const { name, type, fuel, transmission, capacity, price, total, available } = req.body;
 
@@ -321,25 +324,47 @@ app.put('/inventories/:id', verifyToken, async (req, res) => {
 
 app.get('/orders', verifyToken, async (req, res) => {
   try {
-    const orders = await userQuery.getAllOrders();
+    if (req.user.isAdmin) {
+      const orders = await userQuery.getAllOrders();
 
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({
+      if (!orders || orders.length === 0) {
+        return res.status(404).json({
+          status: 'success',
+          message: 'No orders found',
+          data: {
+            orders: []
+          }
+        });
+      }
+
+      res.status(200).json({
         status: 'success',
-        message: 'No orders found',
+        message: 'GET Orders success',
         data: {
-          orders: []
+          orders: orders
+        }
+      });
+    } else {
+      const orders = await userQuery.findOrderByEmail(email);
+
+      if (!orders || orders.length === 0) {
+        return res.status(404).json({
+          status: 'success',
+          message: 'No orders found',
+          data: {
+            orders: []
+          }
+        });
+      }
+
+      res.status(200).json({
+        status: 'success',
+        message: 'GET Orders success',
+        data: {
+          orders: orders.orderStatus
         }
       });
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'GET Orders success',
-      data: {
-        orders: orders
-      }
-    });
   } catch (err) {
     console.error('Error GET Order:', err);
     res.status(400).json({
@@ -350,48 +375,41 @@ app.get('/orders', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/orders', verifyToken, upload.single('file'), async (req, res) => {
+app.post('/orders', verifyToken, upload.single('idCard'), async (req, res) => {
   try {
-    const { email, orderStatus } = req.body;
+    const email = req.user.email;
+    const { phoneNumber, takenDate, returnDate } = req.body;
 
-    if (!email || !orderStatus || !Array.isArray(orderStatus) || !req.file) {
+    if (!email || !phoneNumber || !takenDate || !returnDate || !req.file) {
+      let invalidItems = [];
+      if (!email) {invalidItems.push("email")}
+      else if (!phoneNumber) {invalidItems.push("phoneNumber")}
+      else if (!takenDate) {invalidItems.push("takenDate")}
+      else if (!returnDate) {invalidItems.push("returnDate")}
+      else if (!req.file) {invalidItems.push("req.file")}
       return res.status(400).json({
         status: 'error',
-        message: 'Invalid input: "email" and "orderStatus" are required, and "orderStatus" must be an array.',
+        message: `Error POST Order: Invalid Order Data (${invalidItems.join(", ")})`,
         data: {}
       });
     }
 
-    // Validasi setiap entri dalam orderStatus
-    const isValidOrderStatus = orderStatus.every((status) => {
-      return (
-        status.phoneNumber &&
-        status.idCard &&  
-        status.orderDate &&
-        status.takenDate &&
-        status.returnDate &&
-        ['completed', 'uncomplete'].includes(status.paymentStatus) &&
-        ['taken', 'untaken'].includes(status.takenStatus) &&
-        ['returned', 'unreturned'].includes(status.returnStatus)
-      );
-    });
-
-    if (!isValidOrderStatus) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Error POST Order: Invalid Order Data',
-        data: {}
-      });
-    }
-
-    const image = r2.uploadImage(req.file);
+    const imageURL = uploadImage(req.file);
 
     // Periksa apakah email sudah ada di database
     const existingOrder = await userQuery.findOrderByEmail(email);
 
+    const newOrderStatus = { 
+      phoneNumber: phoneNumber,
+      idCard: imageURL,
+      orderDate: new Date(),
+      takenDate: takenDate,
+      returnDate: returnDate
+    }
+
     if (existingOrder) {
       // Jika email sudah ada, tambahkan orderStatus baru ke array
-      existingOrder.orderStatus.push({ ...orderStatus, image });
+      existingOrder.orderStatus.push(newOrderStatus);
       const updatedOrder = await existingOrder.save();
 
       return res.status(200).json({
@@ -404,7 +422,7 @@ app.post('/orders', verifyToken, upload.single('file'), async (req, res) => {
     }
 
     // Jika email belum ada, buat order baru
-    const savedOrder = await userQuery.createOrder(email, orderStatus);
+    const savedOrder = await userQuery.createOrder(email, newOrderStatus);
 
     res.status(201).json({
       status: 'success',

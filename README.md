@@ -156,19 +156,18 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 #### POST `/inventories`
 - **Description**: Creates a new inventory item.
 - **Authorization**: Bearer Token
+- **Header**: Content-Type: multipart/form-data
 - **Request Body**:
-  ```json
-  {
-    "name": "string",
-    "type": "Skuter | Sport",
-    "image": "Image Binary",
-    "fuel": "integer",
-    "transmission": "Matic | Manual",
-    "capacity": "integer",
-    "price": "integer",
-    "total": "integer",
-    "available": "integer"
-  }
+  ```multipart/form-data
+  "name": "string",
+  "type": "Skuter | Sport",
+  "image": "Image Binary",
+  "fuel": "integer",
+  "transmission": "Matic | Manual",
+  "capacity": "integer",
+  "price": "integer",
+  "total": "integer",
+  "available": "integer"
   ```
 - **Responses**:
   - **201 (Success)**:
@@ -253,23 +252,13 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 #### POST `/orders`
 - **Description**: Creates a new order.
 - **Authorization**: Bearer Token
+- **Header**: Content-Type: multipart/form-data
 - **Request Body**:
-  ```json
-  {
-    "email": "string",
-    "orderStatus": [
-      {
-        "phoneNumber": "string",
-        "idCard": "Image Binary",
-        "orderDate": "string (ISO format)",
-        "takenDate": "string (ISO format)",
-        "returnDate": "string (ISO format)",
-        "paymentStatus": "completed | uncomplete",
-        "takenStatus": "taken | untaken",
-        "returnStatus": "returned | unreturned"
-      }
-    ]
-  }
+  ```multipart/form-data
+  "phoneNumber": "string",
+  "idCard": "Image Binary",
+  "takenDate": "string (ISO format)",
+  "returnDate": "string (ISO format)",
   ```
 - **Responses**:
   - **201 (New Order Created)**:

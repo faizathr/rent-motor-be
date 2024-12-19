@@ -32,11 +32,6 @@ async function findOneByEmail(email) {
     return Users.findOne({ email: email });
 }
 
-async function createOrder(email, orderStatus) {
-  const newOrder = new Order({ email, orderStatus });
-  return newOrder.save();
-}
-
 async function findOrderByEmail(email) {
   return Order.findOne({ email });
 }
