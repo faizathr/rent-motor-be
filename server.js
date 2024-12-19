@@ -49,7 +49,8 @@ app.post('/register', async (req, res) => {
   // Async untuk concurrency, request dan responds
   try {
     const { name, email, password } = req.body; // Nerima dari frontend
-    const payload = { name, email, password }; // Untuk menyimpan ketiga variabel menjadi satu paket
+    const isAdmin = false;
+    const payload = { name, email, password, isAdmin }; // Untuk menyimpan ketiga variabel menjadi satu paket
     const user = await register(payload);
 
     userQuery.createUser(user).then((user) => {
