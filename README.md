@@ -255,10 +255,10 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 - **Header**: Content-Type: multipart/form-data
 - **Request Body**:
   ```multipart/form-data
-  "phoneNumber": "string",
+  "phone": "string",
   "idCard": "Image Binary",
-  "takenDate": "string (ISO format)",
-  "returnDate": "string (ISO format)",
+  "startDate": "string (ISO format)",
+  "endDate": "string (ISO format)",
   ```
 - **Responses**:
   - **201 (New Order Created)**:

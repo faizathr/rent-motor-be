@@ -379,14 +379,14 @@ app.get('/orders', verifyToken, async (req, res) => {
 app.post('/orders', verifyToken, upload.single('idCard'), async (req, res) => {
   try {
     const email = req.user.email;
-    const { phoneNumber, takenDate, returnDate } = req.body;
+    const { phone, startDate, endDate } = req.body;
 
-    if (!email || !phoneNumber || !takenDate || !returnDate || !req.file) {
+    if (!email || !phone || !startDate || !endDate || !req.file) {
       let invalidItems = [];
       if (!email) {invalidItems.push("email")}
-      else if (!phoneNumber) {invalidItems.push("phoneNumber")}
-      else if (!takenDate) {invalidItems.push("takenDate")}
-      else if (!returnDate) {invalidItems.push("returnDate")}
+      else if (!phone) {invalidItems.push("phone")}
+      else if (!startDate) {invalidItems.push("startDate")}
+      else if (!endDate) {invalidItems.push("endDate")}
       else if (!req.file) {invalidItems.push("req.file")}
       return res.status(400).json({
         status: 'error',
@@ -401,11 +401,15 @@ app.post('/orders', verifyToken, upload.single('idCard'), async (req, res) => {
     const existingOrder = await userQuery.findOrderByEmail(email);
 
     const newOrderStatus = { 
-      phoneNumber: phoneNumber,
+      phoneNumber: phone,
       idCard: imageURL,
       orderDate: new Date(),
-      takenDate: takenDate,
-      returnDate: returnDate
+      paymentDate: null,
+      paymentStatus: "uncomplete",
+      takenDate: startDate,
+      takenStatus: "untaken",
+      returnDate: endDate,
+      returnStatus: "unreturned"
     }
 
     if (existingOrder) {
