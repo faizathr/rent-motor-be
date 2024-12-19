@@ -113,6 +113,10 @@ async function getAllInventories() {
   return Inventory.find();  
 }
 
+async function getInventoryById(id) {
+  return Inventory.findById(id);  
+}
+
 async function createInventory(inventory) {
   return Inventory.create(inventory);
 }
@@ -138,6 +142,7 @@ module.exports = {
     getOrderById,
     findOrderByEmail,
     getAllInventories,
+    getInventoryById,
     createInventory,
     updateInventory
 };

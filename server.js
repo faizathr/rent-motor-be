@@ -379,18 +379,37 @@ app.get('/orders', verifyToken, async (req, res) => {
 app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => {
   try {
     const email = req.user.email;
-    const { phone, startDate, endDate } = req.body;
+    const { phone, startDate, endDate, motorId } = req.body;
 
-    if (!email || !phone || !startDate || !endDate || !req.file) {
+    if (!email || !phone || !startDate || !endDate || !req.file || !motorId) {
       let invalidItems = [];
       if (!email) {invalidItems.push("email")}
       else if (!phone) {invalidItems.push("phone")}
       else if (!startDate) {invalidItems.push("startDate")}
       else if (!endDate) {invalidItems.push("endDate")}
       else if (!req.file) {invalidItems.push("ktpImage")}
+      else if (!motorId) {invalidItems.push("motorId")}
       return res.status(400).json({
         status: 'error',
         message: `Error POST Order: Invalid Order Data (${invalidItems.join(", ")})`,
+        data: {}
+      });
+    }
+
+    const inventory = await userQuery.getOrderById(motorId);
+
+    if (!inventory) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Error POST Order: motorId not found!',
+        data: {}
+      });
+    }
+
+    if (inventory.available == 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Error POST Order: no more available vehicle for requested motorId',
         data: {}
       });
     }
@@ -409,7 +428,8 @@ app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => 
       takenDate: startDate,
       takenStatus: "untaken",
       returnDate: endDate,
-      returnStatus: "unreturned"
+      returnStatus: "unreturned",
+      motorId: motorId
     }
 
     if (existingOrder) {
@@ -428,6 +448,9 @@ app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => 
 
     // Jika email belum ada, buat order baru
     const savedOrder = await userQuery.createOrder(email, newOrderStatus);
+
+    inventory.available--;
+    const updatedInventory = await userQuery.updateInventory(motorId, inventory);
 
     res.status(201).json({
       status: 'success',

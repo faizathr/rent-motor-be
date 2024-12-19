@@ -34,6 +34,7 @@ const orderSchema = new mongoose.Schema(
         takenStatus: { type: String, enum: ['taken', 'untaken'], default: 'untaken'},
         returnDate: { type: Date, required: true},
         returnStatus: { type: String, enum: ['returned', 'unreturned'], default: 'unreturned'},
+        motorId: { type: String, required: true },
       },
     ],
   }
