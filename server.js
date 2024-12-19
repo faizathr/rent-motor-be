@@ -376,7 +376,7 @@ app.get('/orders', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/orders', verifyToken, upload.single('idCard'), async (req, res) => {
+app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => {
   try {
     const email = req.user.email;
     const { phone, startDate, endDate } = req.body;
