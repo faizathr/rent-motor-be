@@ -727,3 +727,8 @@ app.put('/payment/:id/pay', verifyToken, async (req, res) => {
     });
   }
 });
+
+
+app.get('/', function(req, res){
+  res.sendFile(__dirname + '/documentation.html');
+});

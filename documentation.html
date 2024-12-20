@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tubes Lasti Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2, h3, h4, h5 {
+            color: #58a6ff;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .endpoint {
+            margin-bottom: 20px;
+        }
+
+        .endpoint h4 {
+            margin: 10px 0;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: Consolas, monospace;
+            color: #d4d4d4;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+        }
+
+        .response {
+            margin-top: 10px;
+        }
+
+        .response-title {
+            margin: 5px 0;
+            font-weight: bold;
+            color: #58a6ff;
+        }
+
+        .link {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        .method {
+            font-weight: bold;
+            color: #ff7b72;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table th, table td {
+            border: 1px solid #333;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table th {
+            background: #333;
+            color: #58a6ff;
+        }
+
+        table td {
+            color: #e0e0e0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Tubes Lasti Documentation</h1>
+
+        <h2>API Documentation Table</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Usage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/register</code></td>
+                    <td>Membuat account baru</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/login</code></td>
+                    <td>Login dengan account yang telah didaftarkan dan mendapatkan JWT token</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/login/verify</code></td>
+                    <td>Melakukan verifikasi JWT token dan memperbaruinya</td>
+                </tr>
+                <tr>
+                    <td>GET</td>
+                    <td><code>/inventories</code></td>
+                    <td>Mendapatkan seluruh inventory yang ada</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/inventories</code></td>
+                    <td>Membuat inventory baru</td>
+                </tr>
+                <tr>
+                    <td>PUT</td>
+                    <td><code>/inventories/:id</code></td>
+                    <td>Mengupdate inventory berdasarkan id</td>
+                </tr>
+                <tr>
+                    <td>GET</td>
+                    <td><code>/orders</code></td>
+                    <td>Mendapatkan seluruh order yang pernah dibuat oleh account tertentu</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/orders</code></td>
+                    <td>Membuat order baru</td>
+                </tr>
+                <tr>
+                    <td>PUT</td>
+                    <td><code>/orders/:id/paidstatus</code></td>
+                    <td>Mengubah status pembayaran dari uncomplete menjadi completed</td>
+                </tr>
+                <tr>
+                    <td>PUT</td>
+                    <td><code>/orders/:id/takenstatus</code></td>
+                    <td>Mengubah status pembayaran dari untaken menjadi taken</td>
+                </tr>
+                <tr>
+                    <td>PUT</td>
+                    <td><code>/orders/:id/returnedstatus</code></td>
+                    <td>Mengubah status pembayaran dari unreturned menjadi returned</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="endpoint">
+            <h2>Orders</h2>
+
+            <h4><span class="method">GET</span> <code>/orders</code></h4>
+            <p><strong>Description:</strong> Retrieves all orders for a specific user.</p>
+            <p><strong>Authorization:</strong> Bearer Token</p>
+            <div class="response">
+                <p class="response-title">200 (Success):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "GET Orders success",
+    "data": {
+        "orders": [ /* Array of Orders */ ]
+    }
+}</pre>
+                </div>
+                <p class="response-title">404 (No Data):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "No orders found",
+    "data": {
+        "orders": []
+    }
+}</pre>
+                </div>
+                <p class="response-title">400 (Error):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "error",
+    "message": "Error GET Order: {error message}",
+    "data": {}
+}</pre>
+                </div>
+            </div>
+
+            <h4><span class="method">POST</span> <code>/orders</code></h4>
+            <p><strong>Description:</strong> Creates a new order.</p>
+            <p><strong>Authorization:</strong> Bearer Token</p>
+            <p><strong>Header:</strong> Content-Type: multipart/form-data</p>
+            <div class="code-block">
+                <pre>{
+    "phone": "string",
+    "idCard": "Image Binary",
+    "startDate": "string (ISO format)",
+    "endDate": "string (ISO format)"
+}</pre>
+            </div>
+
+            <div class="response">
+                <p class="response-title">201 (New Order Created):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "Order created successfully.",
+    "data": {
+        "order": { /* New Order Data */ }
+    }
+}</pre>
+                </div>
+                <p class="response-title">200 (Order Updated):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "Order status added successfully.",
+    "data": {
+        "order": { /* Updated Order */ }
+    }
+}</pre>
+                </div>
+                <p class="response-title">400 (Invalid Input):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "error",
+    "message": "Invalid input: {error message}",
+    "data": {}
+}</pre>
+                </div>
+            </div>
+
+            <h4><span class="method">PUT</span> <code>/orders/:id/paidstatus</code></h4>
+            <p><strong>Description:</strong> Updates payment status of an order to <code>completed</code>.</p>
+            <p><strong>Authorization:</strong> Bearer Token</p>
+            <div class="response">
+                <p class="response-title">200 (Success):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "Payment status updated to completed",
+    "data": {
+        "order": { /* Updated Order */ }
+    }
+}</pre>
+                </div>
+                <p class="response-title">200 (Order Not Found):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "Order status not found",
+    "data": {}
+}</pre>
+                </div>
+                <p class="response-title">400 (Error):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "error",
+    "message": "Internal Server Error: {error message}",
+    "data": {}
+}</pre>
+                </div>
+            </div>
+
+            <h4><span class="method">PUT</span> <code>/orders/:id/takenstatus</code></h4>
+            <p><strong>Description:</strong> Updates taken status of an order to <code>taken</code>.</p>
+            <p><strong>Authorization:</strong> Bearer Token</p>
+            <div class="response">
+                <p class="response-title">200 (Success):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "Taken status updated to completed",
+    "data": {
+        "order": { /* Updated Order */ }
+    }
+}</pre>
+                </div>
+                <p class="response-title">200 (Order Not Found):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "Order status not found",
+    "data": {}
+}</pre>
+                </div>
+                <p class="response-title">400 (Error):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "error",
+    "message": "Internal Server Error: {error message}",
+    "data": {}
+}</pre>
+                </div>
+            </div>
+
+            <h4><span class="method">PUT</span> <code>/orders/:id/returnedstatus</code></h4>
+            <p><strong>Description:</strong> Updates return status of an order to <code>returned</code>.</p>
+            <p><strong>Authorization:</strong> Bearer Token</p>
+            <div class="response">
+                <p class="response-title">200 (Success):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "Returned status updated to completed",
+    "data": {
+        "order": { /* Updated Order */ }
+    }
+}</pre>
+                </div>
+                <p class="response-title">200 (Order Not Found):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "Order status not found",
+    "data": {}
+}</pre>
+                </div>
+                <p class="response-title">400 (Error):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "error",
+    "message": "Internal Server Error: {error message}",
+    "data": {}
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            &copy; 2024 Tubes Lasti API Documentation
+        </footer>
+    </div>
+</body>
+</html>
