@@ -346,7 +346,7 @@ app.get('/orders', verifyToken, async (req, res) => {
         }
       });
     } else {
-      const orders = await userQuery.findOrderByEmail(email);
+      const orders = await userQuery.findOrderByEmail(req.user.email);
 
       if (!orders || orders.length === 0) {
         return res.status(404).json({
@@ -367,10 +367,10 @@ app.get('/orders', verifyToken, async (req, res) => {
       });
     }
   } catch (err) {
-    console.error('Error GET Order:', err);
+    console.error('Error GET Order: ', err);
     res.status(400).json({
       status: 'error',
-      message: 'Login error: ' + err.message,
+      message: 'Error GET Order: ' + err.message,
       data: {}
     })
   }
