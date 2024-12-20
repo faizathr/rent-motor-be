@@ -396,7 +396,7 @@ app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => 
       });
     }
 
-    const inventory = await userQuery.getOrderById(motorId);
+    const inventory = await userQuery.getInventoryById(motorId);
 
     if (!inventory) {
       return res.status(400).json({
