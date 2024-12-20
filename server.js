@@ -473,7 +473,8 @@ app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => 
         status: 'success',
         message: 'Order created successfully.',
         data: {
-          order: savedOrder
+          order: savedOrder.orderStatus.slice(-1),
+          payment_qr_url: `${req.protocol}://${req.get('host')}/payment/${savedOrder.orderStatus.slice(-1)._id}/pay`
         }
       });
     } else {
