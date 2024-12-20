@@ -230,56 +230,64 @@ app.get('/inventories', async (req, res) => {
       status: 'error',
       message: 'Error GET Inventory: ' + err.message,
       data: {}
-    })
+    });
   }
 });
 
 app.post('/inventories', verifyToken, upload.single('image'), async (req, res) => {
   try {
-    const { name, type, fuel, transmission, capacity, price, total, available } = req.body;
+    if (req.user.isAdmin) {
+      const { name, type, fuel, transmission, capacity, price, total, available } = req.body;
 
-    const isValidInventory = ((name, type, fuel, transmission, capacity, price, total, available) => {
-      return (
-        name && name != null &&
-        ['Skuter', 'Sport'].includes(type) &&
-        req.file &&
-        fuel && fuel > 0 &&
-        ['Matic', 'Manual'].includes(transmission) &&
-        capacity && capacity > 0 &&
-        price && price > 0 &&
-        total &&
-        available
-      )
-    })(name, type, fuel, transmission, capacity, price, total, available);
+      const isValidInventory = ((name, type, fuel, transmission, capacity, price, total, available) => {
+        return (
+          name && name != null &&
+          ['Skuter', 'Sport'].includes(type) &&
+          req.file &&
+          fuel && fuel > 0 &&
+          ['Matic', 'Manual'].includes(transmission) &&
+          capacity && capacity > 0 &&
+          price && price > 0 &&
+          total &&
+          available
+        )
+      })(name, type, fuel, transmission, capacity, price, total, available);
 
-    if (isValidInventory) {
-      const image = await uploadImage(req.file);
+      if (isValidInventory) {
+        const image = await uploadImage(req.file);
 
-      const savedInventory = await userQuery.createInventory({
-        name,
-        type,
-        image,
-        fuel,
-        transmission,
-        capacity,
-        price,
-        total,
-        available
-      });
+        const savedInventory = await userQuery.createInventory({
+          name,
+          type,
+          image,
+          fuel,
+          transmission,
+          capacity,
+          price,
+          total,
+          available
+        });
 
-      res.status(201).json({
-        status: 'success',
-        message: 'Inventory created successfully.',
-        data: {
-          inventories: savedInventory
-        }
-      });
+        res.status(201).json({
+          status: 'success',
+          message: 'Inventory created successfully.',
+          data: {
+            inventories: savedInventory
+          }
+        });
+      } else {
+        res.status(400).json({
+          status: 'error',
+          message: 'Error POST Inventory: Invalid Inventory Data',
+          data: {}
+        })
+      }
     } else {
-      res.status(400).json({
+      res.status(403).json({
         status: 'error',
-        message: 'Error POST Inventory: Invalid Inventory Data',
+        message: 'Error POST Inventory: Admin Privilege required',
         data: {}
-      })
+      });
     }
   } catch (err) {
     console.error('Error POST Inventory:', err);
@@ -288,7 +296,7 @@ app.post('/inventories', verifyToken, upload.single('image'), async (req, res) =
         status: 'error',
         message: 'Error POST Inventory: ' + err.message,
         data: {}
-      })
+      });
     } else {
       res.status(400).json({
         status: 'error',
@@ -301,25 +309,33 @@ app.post('/inventories', verifyToken, upload.single('image'), async (req, res) =
 
 app.put('/inventories/:id', verifyToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const inventories = req.body;
+    if (req.user.isAdmin) {
+      const { id } = req.params;
+      const inventories = req.body;
 
-    const savedInventory = await userQuery.updateInventory(id, inventories);
+      const savedInventory = await userQuery.updateInventory(id, inventories);
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Inventory updated successfully.',
-      data: {
-        inventories: savedInventory
-      }
-    });
+      res.status(200).json({
+        status: 'success',
+        message: 'Inventory updated successfully.',
+        data: {
+          inventories: savedInventory
+        }
+      });
+    } else {
+      res.status(403).json({
+        status: 'error',
+        message: 'Error PUT Inventory: Admin Privilege required',
+        data: {}
+      });
+    }
   } catch (err) {
     console.error('Error PUT Inventory:', err);
     res.status(400).json({
       status: 'error',
       message: 'Error PUT Inventory: ' + err.message,
       data: {}
-    })
+    });
   }
 });
 
@@ -372,93 +388,101 @@ app.get('/orders', verifyToken, async (req, res) => {
       status: 'error',
       message: 'Error GET Order: ' + err.message,
       data: {}
-    })
+    });
   }
 });
 
 app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => {
   try {
-    const email = req.user.email;
-    const { phone, startDate, endDate, motorId } = req.body;
+    if (!req.user.isAdmin) {
+      const email = req.user.email;
+      const { phone, startDate, endDate, motorId } = req.body;
 
-    if (!email || !phone || !startDate || !endDate || !req.file || !motorId) {
-      let invalidItems = [];
-      if (!email) {invalidItems.push("email")}
-      else if (!phone) {invalidItems.push("phone")}
-      else if (!startDate) {invalidItems.push("startDate")}
-      else if (!endDate) {invalidItems.push("endDate")}
-      else if (!req.file) {invalidItems.push("ktpImage")}
-      else if (!motorId) {invalidItems.push("motorId")}
-      return res.status(400).json({
-        status: 'error',
-        message: `Error POST Order: Invalid Order Data (${invalidItems.join(", ")})`,
-        data: {}
-      });
-    }
+      if (!email || !phone || !startDate || !endDate || !req.file || !motorId) {
+        let invalidItems = [];
+        if (!email) {invalidItems.push("email")}
+        else if (!phone) {invalidItems.push("phone")}
+        else if (!startDate) {invalidItems.push("startDate")}
+        else if (!endDate) {invalidItems.push("endDate")}
+        else if (!req.file) {invalidItems.push("ktpImage")}
+        else if (!motorId) {invalidItems.push("motorId")}
+        return res.status(400).json({
+          status: 'error',
+          message: `Error POST Order: Invalid Order Data (${invalidItems.join(", ")})`,
+          data: {}
+        });
+      }
 
-    const inventory = await userQuery.getInventoryById(motorId);
+      const inventory = await userQuery.getInventoryById(motorId);
 
-    if (!inventory) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Error POST Order: motorId not found!',
-        data: {}
-      });
-    }
+      if (!inventory) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Error POST Order: motorId not found!',
+          data: {}
+        });
+      }
 
-    if (inventory.available == 0) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Error POST Order: no more available vehicle for requested motorId',
-        data: {}
-      });
-    }
+      if (inventory.available == 0) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Error POST Order: no more available vehicle for requested motorId',
+          data: {}
+        });
+      }
 
-    const imageURL = await uploadImage(req.file);
+      const imageURL = await uploadImage(req.file);
 
-    // Periksa apakah email sudah ada di database
-    const existingOrder = await userQuery.findOrderByEmail(email);
+      // Periksa apakah email sudah ada di database
+      const existingOrder = await userQuery.findOrderByEmail(email);
 
-    const newOrderStatus = { 
-      phoneNumber: phone,
-      idCard: imageURL,
-      orderDate: new Date(),
-      paymentDate: null,
-      paymentStatus: "uncomplete",
-      takenDate: startDate,
-      takenStatus: "untaken",
-      returnDate: endDate,
-      returnStatus: "unreturned",
-      motorId: motorId
-    }
+      const newOrderStatus = { 
+        phoneNumber: phone,
+        idCard: imageURL,
+        orderDate: new Date(),
+        paymentDate: null,
+        paymentStatus: "uncomplete",
+        takenDate: startDate,
+        takenStatus: "untaken",
+        returnDate: endDate,
+        returnStatus: "unreturned",
+        motorId: motorId
+      }
 
-    if (existingOrder) {
-      // Jika email sudah ada, tambahkan orderStatus baru ke array
-      existingOrder.orderStatus.push(newOrderStatus);
-      const updatedOrder = await existingOrder.save();
+      if (existingOrder) {
+        // Jika email sudah ada, tambahkan orderStatus baru ke array
+        existingOrder.orderStatus.push(newOrderStatus);
+        const updatedOrder = await existingOrder.save();
 
-      return res.status(200).json({
+        return res.status(200).json({
+          status: 'success',
+          message: 'Order status added successfully.',
+          data: {
+            order: updatedOrder
+          }
+        });
+      }
+
+      // Jika email belum ada, buat order baru
+      const savedOrder = await userQuery.createOrder(email, newOrderStatus);
+
+      inventory.available = inventory.available - 1;
+      const updatedInventory = await userQuery.updateInventory(motorId, inventory);
+
+      res.status(201).json({
         status: 'success',
-        message: 'Order status added successfully.',
+        message: 'Order created successfully.',
         data: {
-          order: updatedOrder
+          order: savedOrder
         }
       });
+    } else {
+      res.status(403).json({
+        status: 'error',
+        message: 'Error POST Order: Admin cannot make order',
+        data: {}
+      });
     }
-
-    // Jika email belum ada, buat order baru
-    const savedOrder = await userQuery.createOrder(email, newOrderStatus);
-
-    inventory.available--;
-    const updatedInventory = await userQuery.updateInventory(motorId, inventory);
-
-    res.status(201).json({
-      status: 'success',
-      message: 'Order created successfully.',
-      data: {
-        order: savedOrder
-      }
-    });
   } catch (err) {
     console.error('Error POST Order:', err);
     if (["MimeTypeNotAllowed","ExtensionNotAllowed"].includes(err.name)) {
@@ -479,24 +503,32 @@ app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => 
 
 app.put('/orders/:id/paidstatus', verifyToken, async (req, res) => {
   try {
-    const { id } = req.params; // _id nya orderStatus
-    const updatedOrder = await userQuery.updatePaymentStatusByOrderStatusId(id);
+    if (req.user.isAdmin) {
+      const { id } = req.params; // _id nya orderStatus
+      const updatedOrder = await userQuery.updatePaymentStatusByOrderStatusId(id);
 
-    if (!updatedOrder) {
-      return res.status(200).json({
+      if (!updatedOrder) {
+        return res.status(200).json({
+          status: 'success',
+          message: 'Order status not found',
+          data: {}
+        });
+      }
+
+      res.status(200).json({
         status: 'success',
-        message: 'Order status not found',
+        message: 'Payment status updated to completed',
+        data: {
+          order: updatedOrder
+        }
+      });
+    } else {
+      res.status(403).json({
+        status: 'error',
+        message: 'Error PUT Order: Admin Privilege required',
         data: {}
       });
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Payment status updated to completed',
-      data: {
-        order: updatedOrder
-      }
-    });
   } catch (err) {
     console.error('Error updating payment status:', err);
     res.status(400).json({
@@ -509,22 +541,32 @@ app.put('/orders/:id/paidstatus', verifyToken, async (req, res) => {
 
 app.put('/orders/:id/takenstatus', verifyToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const updatedOrder = await userQuery.updateTakenStatusByOrderStatusId(id);
+    if (req.user.isAdmin) {
+      const { id } = req.params;
+      const updatedOrder = await userQuery.updateTakenStatusByOrderStatusId(id);
 
-    if (!updatedOrder) {
-      return res.status(200).json({
+      if (!updatedOrder) {
+        return res.status(200).json({
+          status: 'success',
+          message: 'Order status not found',
+          data: {}
+        });
+      }
+
+      res.status(200).json({
         status: 'success',
-        message: 'Order status not found',
+        message: 'Taken status updated to taken',
+        data: {
+          order: updatedOrder
+        }
+      });
+    } else {
+      res.status(403).json({
+        status: 'error',
+        message: 'Error PUT Order: Admin Privilege required',
         data: {}
       });
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Taken status updated to taken',
-      order: updatedOrder,
-    });
   } catch (err) {
     console.error('Error updating taken status:', err);
     res.status(400).json({
@@ -537,24 +579,32 @@ app.put('/orders/:id/takenstatus', verifyToken, async (req, res) => {
 
 app.put('/orders/:id/returnedstatus', verifyToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const updatedOrder = await userQuery.updateReturnStatusByOrderStatusId(id);
+    if (req.user.isAdmin) {
+      const { id } = req.params;
+      const updatedOrder = await userQuery.updateReturnStatusByOrderStatusId(id);
 
-    if (!updatedOrder) {
-      return res.status(404).json({ 
+      if (!updatedOrder) {
+        return res.status(404).json({ 
+          status: 'success',
+          message: 'Order status not found',
+          data: {}
+        });
+      }
+
+      res.status(200).json({
         status: 'success',
-        message: 'Order status not found',
+        message: 'Return status updated to returnedupdatedOrder',
+        data: {
+          order: updatedOrder
+        }
+      });
+    } else {
+      res.status(403).json({
+        status: 'error',
+        message: 'Error PUT Order: Admin Privilege required',
         data: {}
       });
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Return status updated to returnedupdatedOrder',
-      data: {
-        order: updatedOrder
-      }
-    });
   } catch (err) {
     console.error('Error updating return status:', err);
     res.status(400).json({ 
@@ -566,67 +616,114 @@ app.put('/orders/:id/returnedstatus', verifyToken, async (req, res) => {
 });
 
 
-app.get('/payment/:id/barcode', async (req, res) => {
-  const { id } = req.params;
-
+app.get('/payment/:id/barcode', verifyToken, async (req, res) => {
   try {
-    // Use the query function to find the matched orderStatus
-    const result = await userQuery.findOneByOrderId(id);
+    if (!req.user.isAdmin) {
+      const { id } = req.params;
+      // Use the query function to find the matched orderStatus
+      const result = await userQuery.findOneByOrderId(id);
 
-    if (!result) {
-      return res.status(404).json({
+      if (!result) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Error GET Payment: Order not found',
+          data: {}
+        });
+      }
+
+      if (result.userEmail != req.user.email) {
+        res.status(403).json({
+          status: 'error',
+          message: 'Error GET Payment: Unauthorized',
+          data: {}
+        });
+      }
+
+      const { matchedOrderStatus } = result;
+
+      // Generate the barcode link
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const barcodeLink = `${baseUrl}/payment/${id}/pay`;
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Barcode link generated successfully',
+        data: {
+          order: matchedOrderStatus,
+          payment_url: barcodeLink
+        },
+      });
+    } else {
+      res.status(403).json({
         status: 'error',
-        message: 'Order or orderStatus not found',
+        message: 'Error GET Payment: Only customer can access payment',
+        data: {}
       });
     }
-
-    const { matchedOrderStatus } = result;
-
-    // Generate the barcode link
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const barcodeLink = `${baseUrl}/payment/${id}/pay`;
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Barcode link generated successfully',
-      data: {
-        orderStatus: matchedOrderStatus,
-        barcodeLink,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
+  } catch (err) {
+    console.error("Error GET Payment: ", err);
+    res.status(400).json({
       status: 'error',
-      message: 'An error occurred while generating the barcode link',
+      message: 'Error GET Payment: ' + err.message,
+      data: {}
     });
   }
 });
 
 // PUT /payment/:id/pay endpoint
-app.put('/payment/:id/pay', async (req, res) => {
-  const { id } = req.params;
-
+app.put('/payment/:id/pay', verifyToken, async (req, res) => {
   try {
-    const updatedOrder = await userQuery.updatePaymentStatusByOrderStatusId(id);
+    if (!req.user.isAdmin) {
+      const { id } = req.params;
 
-    if (!updatedOrder) {
-      return res.status(404).json({
+      const order = await userQuery.findOneByOrderId(id);
+
+      if (!order) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Error PUT Payment: Order not found',
+          data: {}
+        });
+      }
+
+      if (order.userEmail != req.user.email) {
+        res.status(403).json({
+          status: 'error',
+          message: 'Error PUT Payment: Unauthorized',
+          data: {}
+        });
+      }
+
+      const updatedOrder = await userQuery.updatePaymentStatusByOrderStatusId(id);
+
+      if (!updatedOrder) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Error PUT Payment: Order not found',
+          data: {}
+        });
+      }
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Payment status updated to completed',
+        data: {
+          order: updatedOrder
+        },
+      });
+    } else {
+      res.status(403).json({
         status: 'error',
-        message: 'Order not found',
+        message: 'Error PUT Payment: Only customer can access payment',
+        data: {}
       });
     }
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Payment status updated to completed',
-      data: updatedOrder,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
+  } catch (err) {
+    console.error("Error PUT Payment: ", err);
+    res.status(400).json({
       status: 'error',
-      message: 'An error occurred while updating the payment status',
+      message: 'Error PUT Payment: ' + err.message,
+      data: {}
     });
   }
 });
