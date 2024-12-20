@@ -564,3 +564,69 @@ app.put('/orders/:id/returnedstatus', verifyToken, async (req, res) => {
     });
   }
 });
+
+
+app.get('/payment/:id/barcode', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Use the query function to find the matched orderStatus
+    const result = await userQuery.findOneByOrderId(id);
+
+    if (!result) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Order or orderStatus not found',
+      });
+    }
+
+    const { matchedOrderStatus } = result;
+
+    // Generate the barcode link
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const barcodeLink = `${baseUrl}/payment/${id}/pay`;
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Barcode link generated successfully',
+      data: {
+        orderStatus: matchedOrderStatus,
+        barcodeLink,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred while generating the barcode link',
+    });
+  }
+});
+
+// PUT /payment/:id/pay endpoint
+app.put('/payment/:id/pay', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const updatedOrder = await userQuery.updatePaymentStatusByOrderStatusId(id);
+
+    if (!updatedOrder) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Order not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Payment status updated to completed',
+      data: updatedOrder,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred while updating the payment status',
+    });
+  }
+});

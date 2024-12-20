@@ -78,7 +78,6 @@ async function updateReturnStatusByOrderStatusId(orderStatusId) {
   );
 }
 
-
 async function getCompletedPayment(email) {
   try {
     const userOrders = await Order.findOne({ email });
@@ -107,6 +106,22 @@ async function getAllOrders() {
 
 async function getOrderById(id) {
   return Order.findById(id); 
+}
+
+async function findOneByOrderId(id) {
+  const order = await Order.findOne(
+    { 'orderStatus._id': id },
+    { 'orderStatus.$': 1 }
+  );
+
+  if (!order || !order.orderStatus || order.orderStatus.length === 0) {
+    return null;
+  }
+
+  return {
+    order,
+    matchedOrderStatus: order.orderStatus[0],
+  };
 }
 
 async function getAllInventories() {
@@ -144,5 +159,6 @@ module.exports = {
     getAllInventories,
     getInventoryById,
     createInventory,
-    updateInventory
+    updateInventory,
+    findOneByOrderId
 };
