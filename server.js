@@ -621,9 +621,9 @@ app.get('/payment/:id/barcode', verifyToken, async (req, res) => {
     if (!req.user.isAdmin) {
       const { id } = req.params;
       // Use the query function to find the matched orderStatus
-      const result = await userQuery.findOneByOrderId(id);
+      const order = await userQuery.findOneByOrderId(id);
 
-      if (!result) {
+      if (!order) {
         return res.status(404).json({
           status: 'error',
           message: 'Error GET Payment: Order not found',
@@ -631,16 +631,14 @@ app.get('/payment/:id/barcode', verifyToken, async (req, res) => {
         });
       }
 
-      if (result.userEmail != req.user.email) {
-        console.error(`Error GET Payment: result.userEmail (${result.userEmail}) and req.user.email (${req.user.email}) not matched`);
+      if (order.email != req.user.email) {
+        console.error(`Error GET Payment: order.email (${order.email}) and req.user.email (${req.user.email}) not matched`);
         return res.status(403).json({
           status: 'error',
           message: 'Error GET Payment: Unauthorized',
           data: {}
         });
       }
-
-      const { matchedOrderStatus } = result;
 
       // Generate the barcode link
       const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -650,7 +648,7 @@ app.get('/payment/:id/barcode', verifyToken, async (req, res) => {
         status: 'success',
         message: 'Barcode link generated successfully',
         data: {
-          order: matchedOrderStatus,
+          order: order.orderStatus[0],
           payment_url: barcodeLink
         },
       });
@@ -687,7 +685,7 @@ app.put('/payment/:id/pay', verifyToken, async (req, res) => {
         });
       }
 
-      if (order.userEmail != req.user.email) {
+      if (order.email != req.user.email) {
         return res.status(403).json({
           status: 'error',
           message: 'Error PUT Payment: Unauthorized',

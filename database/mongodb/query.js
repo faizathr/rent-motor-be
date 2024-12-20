@@ -111,17 +111,14 @@ async function getOrderById(id) {
 async function findOneByOrderId(id) {
   const order = await Order.findOne(
     { 'orderStatus._id': id },
-    { 'orderStatus.$': 1 }
+    { 'orderStatus.$': 1, email: 1 }
   );
 
   if (!order || !order.orderStatus || order.orderStatus.length === 0) {
     return null;
   }
 
-  return {
-    order,
-    matchedOrderStatus: order.orderStatus[0],
-  };
+  return order;
 }
 
 async function getAllInventories() {
