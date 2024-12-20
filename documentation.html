@@ -215,6 +215,40 @@
                 </div>
             </div>
 
+            <h4><span class="method">GET</span> <code>/orders/:id</code></h4>
+            <p><strong>Description:</strong> Retrieves an order for a specific order id.</p>
+            <p><strong>Authorization:</strong> Bearer Token</p>
+            <div class="response">
+                <p class="response-title">200 (Success):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "GET Orders success",
+    "data": {
+        "orders": [ /* Array of Orders */ ]
+    }
+}</pre>
+                </div>
+                <p class="response-title">404 (No Data):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "success",
+    "message": "No orders found",
+    "data": {
+        "orders": []
+    }
+}</pre>
+                </div>
+                <p class="response-title">400 (Error):</p>
+                <div class="code-block">
+                    <pre>{
+    "status": "error",
+    "message": "Error GET Order: {error message}",
+    "data": {}
+}</pre>
+                </div>
+            </div>
+
             <h4><span class="method">POST</span> <code>/orders</code></h4>
             <p><strong>Description:</strong> Creates a new order.</p>
             <p><strong>Authorization:</strong> Bearer Token</p>

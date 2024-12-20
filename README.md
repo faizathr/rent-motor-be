@@ -251,6 +251,39 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
     }
     ```
 
+#### GET `/orders/:id`
+- **Description**: Retrieves an order for a specific order id.
+- **Authorization**: Bearer Token
+- **Responses**:
+  - **200 (Success)**:
+    ```json
+    {
+      "status": "success",
+      "message": "GET Orders success",
+      "data": {
+        "orders": [ /* Array of Orders */ ]
+      }
+    }
+    ```
+  - **404 (No Data)**:
+    ```json
+    {
+      "status": "success",
+      "message": "No orders found",
+      "data": {
+        "orders": []
+      }
+    }
+    ```
+  - **400 (Error)**:
+    ```json
+    {
+      "status": "error",
+      "message": "Error GET Order: {error message}",
+      "data": {}
+    }
+    ```
+
 #### POST `/orders`
 - **Description**: Creates a new order.
 - **Authorization**: Bearer Token
