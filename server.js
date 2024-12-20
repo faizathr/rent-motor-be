@@ -458,8 +458,8 @@ app.post('/orders', verifyToken, upload.single('ktpImage'), async (req, res) => 
           status: 'success',
           message: 'Order status added successfully.',
           data: {
-            order: updatedOrder.orderStatus.slice(-1),
-            payment_qr_url: `${req.protocol}://${req.get('host')}/payment/${updatedOrder.orderStatus.slice(-1)._id}/pay`
+            order: updatedOrder.orderStatus.slice(-1)[0],
+            payment_qr_url: `${req.protocol}://${req.get('host')}/payment/${updatedOrder.orderStatus.slice(-1)[0]._id}/pay`
           }
         });
       }
