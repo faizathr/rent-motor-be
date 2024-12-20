@@ -26,6 +26,8 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 | PUT    | `/orders/:id/paidstatus`        | Mengubah status pembayaran dari uncomplete menjadi completed          |
 | PUT    | `/orders/:id/takenstatus`       | Mengubah status pembayaran dari untaken menjadi taken                 |
 | PUT    | `/orders/:id/returnedstatus`    | Mengubah status pembayaran dari unreturned menjadi returned           |
+| GET    | `/payment/:id/barcode`    | Menghasilkan link yang akan dibuat untuk payment (nantinya di frontend diubah menjadi QR Code)           |
+| PUT    | `/payment/:id/pay`    | Mengganti status payment menjadi sudah dibayar           |
 
 ---
 
@@ -382,3 +384,82 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
       "data": {}
     }
     
+#### GET `/payment/:id/barcode`
+- **Description**: Updates return status of an order to `returned`.
+- **Authorization**: Bearer Token
+- **Responses**:
+  - **200 (Success)**:
+    ```json
+    {
+      "status": "success",
+      "message": "Returned status updated to completed",
+      "data": {
+        "order": { /* Updated Order */ }
+      }
+    }
+    ```
+  - **200 (Order Not Found)**:
+    ```json
+    {
+      "status": "success",
+      "message": "Order status not found",
+      "data": {}
+    }
+    ```
+  - **400 (Error)**:
+    ```json
+    {
+      "status": "error",
+      "message": "Internal Server Error: {error message}",
+      "data": {}
+    }
+
+#### PUT `/payment/:id/pay`
+- **Description**: Updates return status of an order to `returned`.
+- **Authorization**: Bearer Token
+- **Responses**:
+  - **200 (Success)**:
+    ```json
+    {
+    "status": "success",
+    "message": "Barcode link generated successfully",
+    "data": {
+      "order": {
+        "phoneNumber": "1234567890",
+        "idCard": "https://example.com/idcard.jpg",
+        "orderDate": "2023-12-20T10:00:00Z",
+        "paymentDate": null,
+        "paymentStatus": "uncomplete",
+        "takenDate": "2023-12-21T10:00:00Z",
+        "takenStatus": "untaken",
+        "returnDate": "2023-12-25T10:00:00Z",
+        "returnStatus": "unreturned",
+        "motorId": "abc123"
+      },
+      "payment_url": "https://example.com/payment/12345/pay"
+    }
+    }
+    ```
+  - **404 (Unauthorized)**:
+    ```json
+    {
+    "status": "error",
+    "message": "Error GET Payment: Order not found",
+    "data": {}
+    }
+    ```
+  - **403 (Unauthorized)**:
+    ```json
+    {
+    "status": "error",
+    "message": "Error GET Payment: Only customer can access payment",
+    "data": {}
+    }
+    ```
+  - **400 (Bad Request)**:
+    ```json
+    {
+    "status": "error",
+    "message": "Error GET Payment: Unauthorized",
+    "data": {}
+    }
