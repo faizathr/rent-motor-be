@@ -3,7 +3,8 @@
 Comprehensive documentation for the API endpoints provided by the Tubes Lasti application. Each endpoint includes details on request payloads, responses, and usage.
 
 ## Table of Contents
-
+- [Deployment](#deployment)
+- [API Documentation Table](#api-documentation-table)
 - [Endpoints](#endpoints)
   - [Authentication](#authentication)
   - [Inventories](#inventories)
@@ -11,7 +12,23 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 
 ---
 
-### API Documentation Table
+## Deployment
+
+Untuk menjalankan pada perangkat lokal, jalankan
+```
+npm run start
+```
+
+Untuk membuat docker image backend, jalankan
+```
+docker build . -t motoran
+```
+
+Jalankan dengan melakukan run atau menggunakan docker compose
+
+---
+
+## API Documentation Table
 
 | Method | Endpoint                        | Usage                                                                 |
 |--------|---------------------------------|-----------------------------------------------------------------------|
@@ -22,6 +39,7 @@ Comprehensive documentation for the API endpoints provided by the Tubes Lasti ap
 | POST   | `/inventories`                  | Membuat inventory baru                                                |
 | PUT    | `/inventories/:id`              | Mengupdate inventory berdasarkan id                                   |
 | GET    | `/orders`                       | Mendapatkan seluruh order yang pernah dibuat oleh account tertentu    |
+| GET    | `/orders/:id`                   | Mendapatkan order dengan id tertentu                                  |
 | POST   | `/orders`                       | Membuat order baru                                                    |
 | PUT    | `/orders/:id/paidstatus`        | Mengubah status pembayaran dari uncomplete menjadi completed          |
 | PUT    | `/orders/:id/takenstatus`       | Mengubah status pembayaran dari untaken menjadi taken                 |
