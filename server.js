@@ -192,7 +192,7 @@ async function login(payload, ishashed) {
     }
 
     const key = process.env.JWT_SECRET || 'default_secret_key'; // Bikin secret key
-    const token = jwt.sign(user, key, { expiresIn: '30m' }); // jwt.sign untuk ngasilin token
+    const token = jwt.sign(user, key, { expiresIn: '4h' }); // jwt.sign untuk ngasilin token
     return {
       token: token,
       isAdmin: user.isAdmin
@@ -387,6 +387,46 @@ app.get('/orders', verifyToken, async (req, res) => {
     res.status(400).json({
       status: 'error',
       message: 'Error GET Order: ' + err.message,
+      data: {}
+    });
+  }
+});
+
+app.get('/orders/:id', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await userQuery.findOneByOrderId(id);
+
+    if (!order || order.length === 0) {
+      return res.status(404).json({
+        status: 'success',
+        message: 'No order found',
+        data: {
+          order: []
+        }
+      });
+    }
+
+    if (order.email != req.user.email && !req.user.isAdmin) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Error GET Order by ID: Unauthorized',
+        data: {}
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'GET order by ID success',
+      data: {
+        order: order.orderStatus[0]
+      }
+    });
+  } catch (err) {
+    console.error('Error GET Order by ID: ', err);
+    res.status(400).json({
+      status: 'error',
+      message: 'Error GET Order by ID: ' + err.message,
       data: {}
     });
   }
