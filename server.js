@@ -632,7 +632,8 @@ app.get('/payment/:id/barcode', verifyToken, async (req, res) => {
       }
 
       if (result.userEmail != req.user.email) {
-        res.status(403).json({
+        console.error(`Error GET Payment: result.userEmail (${result.userEmail}) and req.user.email (${req.user.email}) not matched`);
+        return res.status(403).json({
           status: 'error',
           message: 'Error GET Payment: Unauthorized',
           data: {}
@@ -687,7 +688,7 @@ app.put('/payment/:id/pay', verifyToken, async (req, res) => {
       }
 
       if (order.userEmail != req.user.email) {
-        res.status(403).json({
+        return res.status(403).json({
           status: 'error',
           message: 'Error PUT Payment: Unauthorized',
           data: {}
